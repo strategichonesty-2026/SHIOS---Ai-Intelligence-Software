@@ -4,6 +4,12 @@ Runs on predictions whose expiration date has passed AND whose target period now
 actual trend value. Both conditions matter: an expired prediction with no observed actual is
 recorded as `unverifiable` rather than silently scored, because scoring a missing value is
 how accuracy metrics get quietly inflated.
+
+Interval predictions (`ols_interval_v1`) are scored on coverage: did the actual value land
+inside the published 80% interval. Coverage is the same kind of number as the claimed
+confidence, which is what makes the calibration delta meaningful (ANALYSIS.md 5.1). The
+point accuracy score is still recorded as a diagnostic, and legacy point predictions with no
+published bounds continue to be scored on point accuracy alone.
 """
 
 from __future__ import annotations
@@ -24,10 +30,10 @@ from app.services.stats import accuracy_score, direction_of
 
 class RealityCheckAgent(Agent):
     name = "reality_check"
-    supports_decision = "Was the forecast right, and by how much was it wrong?"
+    supports_decision = "Did reality land inside the interval we published, and if not, by how much?"
     requires_evidence = "The prediction plus the observed trend value for its target period."
     confidence_method = "Not applicable; this agent measures rather than estimates."
-    correctness_check = "Scores are recomputable from stored predicted and actual values."
+    correctness_check = "Coverage and scores are recomputable from stored bounds and actual values."
     success_metric = "Every expired prediction reaches a terminal state: scored or unverifiable."
     human_review = "none"
 
@@ -76,6 +82,28 @@ class RealityCheckAgent(Agent):
             actual_direction = direction_of(actual_value - baseline_value, tolerance=0.5)
             direction_correct = actual_direction == prediction.predicted_direction
 
+            has_interval = (
+                prediction.lower_bound is not None and prediction.upper_bound is not None
+            )
+            interval_covered = (
+                bool(prediction.lower_bound <= actual_value <= prediction.upper_bound)
+                if has_interval
+                else None
+            )
+            if has_interval:
+                notes = (
+                    f"Interval {prediction.lower_bound:.1f}-{prediction.upper_bound:.1f} "
+                    f"{'covered' if interval_covered else 'missed'} the observed "
+                    f"{actual_value:.1f} ({actual_direction}) in {prediction.target_period}; "
+                    f"point estimate was {prediction.predicted_value:.1f} "
+                    f"({prediction.predicted_direction})."
+                )
+            else:
+                notes = (
+                    f"Predicted {prediction.predicted_value:.1f} ({prediction.predicted_direction}), "
+                    f"observed {actual_value:.1f} ({actual_direction}) in {prediction.target_period}."
+                )
+
             result = PredictionResult(
                 prediction_id=prediction.id,
                 reality_period=prediction.target_period,
@@ -83,11 +111,9 @@ class RealityCheckAgent(Agent):
                 predicted_value=prediction.predicted_value,
                 accuracy_score=score,
                 deviation=deviation,
+                interval_covered=interval_covered,
                 direction_correct=direction_correct,
-                notes=(
-                    f"Predicted {prediction.predicted_value:.1f} ({prediction.predicted_direction}), "
-                    f"observed {actual_value:.1f} ({actual_direction}) in {prediction.target_period}."
-                ),
+                notes=notes,
             )
             session.add(result)
             prediction.status = "evaluated"
@@ -99,6 +125,7 @@ class RealityCheckAgent(Agent):
                     "prediction_id": prediction.id,
                     "prediction_result_id": result.id,
                     "accuracy_score": score,
+                    "interval_covered": interval_covered,
                 },
                 session,
             )

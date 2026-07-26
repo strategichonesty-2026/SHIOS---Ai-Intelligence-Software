@@ -1,9 +1,14 @@
 """5.9 Learning Agent — turn scored predictions into a correction signal.
 
-The calibration delta is `accuracy - confidence`. Negative means the system claimed more
-certainty than it earned, and the Prediction Agent will publish lower confidence for that
-metric slice next time. That single number is the entire learning mechanism in v1, and it is
-deliberately legible: anyone can audit why confidence moved.
+For interval predictions the calibration delta is `coverage - claimed interval confidence`,
+where coverage is 1.0 if the actual value landed inside the published interval and 0.0 if it
+missed. Averaged over a slice this is exactly `empirical coverage - nominal coverage`, two
+numbers of the same kind — which is what the old `accuracy - confidence` delta was not
+(ANALYSIS.md 5.1). Negative means the intervals miss more often than claimed and the
+Prediction Agent will publish lower confidence for that slice next time. Legacy point
+predictions with no recorded coverage keep the old delta. The single number remains the
+entire learning mechanism, and it is deliberately legible: anyone can audit why confidence
+moved.
 """
 
 from __future__ import annotations
@@ -25,7 +30,10 @@ class LearningAgent(Agent):
     name = "learning"
     supports_decision = "How much should the system trust its own next forecast?"
     requires_evidence = "A scored PredictionResult linked to a published Prediction."
-    confidence_method = "Calibration delta = accuracy_score - claimed confidence."
+    confidence_method = (
+        "Calibration delta = interval coverage (0 or 1) - claimed interval confidence; "
+        "accuracy_score - confidence for legacy point predictions."
+    )
     correctness_check = "Mean absolute calibration delta should shrink as sample size grows."
     success_metric = "Calibration delta within +/-0.10 after 20 scored predictions per slice."
     human_review = "none"
@@ -45,7 +53,12 @@ class LearningAgent(Agent):
             if prediction is None:
                 continue
 
-            delta = round(result.accuracy_score - prediction.confidence, 4)
+            coverage_correct = result.interval_covered
+            if coverage_correct is not None:
+                nominal = prediction.interval_confidence or 0.0
+                delta = round(float(coverage_correct) - nominal, 4)
+            else:
+                delta = round(result.accuracy_score - prediction.confidence, 4)
             false_positive = (
                 prediction.predicted_direction == "up"
                 and not result.direction_correct
@@ -61,8 +74,12 @@ class LearningAgent(Agent):
                 f"method={prediction.method}",
                 f"periods_used={len(prediction.trend_ids or [])}",
                 f"evidence={len(prediction.supporting_evidence_ids or [])}",
-                "overconfident" if delta < -0.1 else "underconfident" if delta > 0.1 else "calibrated",
             ]
+            if coverage_correct is not None:
+                notes.append(f"interval_{'covered' if coverage_correct else 'missed'}")
+            notes.append(
+                "overconfident" if delta < -0.1 else "underconfident" if delta > 0.1 else "calibrated"
+            )
 
             feedback = LearningFeedback(
                 prediction_id=prediction.id,
@@ -72,6 +89,7 @@ class LearningAgent(Agent):
                 accuracy_score=result.accuracy_score,
                 false_positive=false_positive,
                 false_negative=false_negative,
+                coverage_correct=coverage_correct,
                 confidence_calibration_delta=delta,
                 signal_quality_notes="; ".join(notes),
             )

@@ -36,8 +36,11 @@ def accuracy(session: Session = Depends(get_session)) -> dict:
     by_period: dict[str, list[float]] = {}
     for result in results:
         by_period.setdefault(result.reality_period, []).append(result.accuracy_score)
+    covered = [r.interval_covered for r in results if r.interval_covered is not None]
     return {
         "scored": len(results),
+        "interval_scored": len(covered),
+        "interval_coverage_rate": round(sum(covered) / len(covered), 4) if covered else None,
         "mean_accuracy": round(mean([r.accuracy_score for r in results]), 4) if results else None,
         "direction_hit_rate": round(
             sum(1 for r in results if r.direction_correct) / len(results), 4
@@ -86,6 +89,7 @@ def get_prediction(prediction_id: str, session: Session = Depends(get_session)) 
                 "actual_value": result.actual_value,
                 "accuracy_score": result.accuracy_score,
                 "deviation": result.deviation,
+                "interval_covered": result.interval_covered,
                 "direction_correct": result.direction_correct,
                 "notes": result.notes,
                 "evaluated_at": result.evaluated_at,
@@ -115,6 +119,9 @@ def _serialize(prediction: Prediction) -> dict:
         "horizon": prediction.horizon,
         "target_period": prediction.target_period,
         "predicted_value": prediction.predicted_value,
+        "lower_bound": prediction.lower_bound,
+        "upper_bound": prediction.upper_bound,
+        "interval_confidence": prediction.interval_confidence,
         "predicted_direction": prediction.predicted_direction,
         "confidence": prediction.confidence,
         "method": prediction.method,

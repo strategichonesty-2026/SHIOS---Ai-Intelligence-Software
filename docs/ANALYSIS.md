@@ -129,11 +129,15 @@ schema change.
 
 Stated plainly, because a system built on this premise should not hide them.
 
-1. **Accuracy and confidence are not the same kind of number.** `accuracy_score` is a bounded
-   relative-error measure; confidence is a claim about reliability. The calibration delta treats
-   them as comparable, which is a useful heuristic and not a proper scoring rule. The current
-   demo data shows the system running *underconfident* (delta ≈ +0.50) for exactly this reason.
-   The v2 fix is interval forecasts scored on coverage rather than point accuracy.
+1. **Accuracy and confidence are not the same kind of number.** *(Resolved in v1.1.)*
+   `accuracy_score` is a bounded relative-error measure; confidence is a claim about
+   reliability. The original calibration delta treated them as comparable, which produced the
+   documented +0.50 underconfidence skew. Since v1.1 the Prediction Agent publishes an 80%
+   OLS prediction interval (`ols_interval_v1`), the Reality Check scores interval coverage
+   (`interval_covered`), and the calibration delta is `coverage − nominal level` — two numbers
+   of the same kind, bounded in [−0.8, +0.2] by construction. Point accuracy is still recorded
+   as a diagnostic; legacy `ols_linear_v1` predictions remain immutable and keep the old
+   scoring.
 2. **Posting volume is a proxy for demand.** It leads real hiring by weeks and overstates churn.
    Every report says so.
 3. **Entity extraction is dictionary-based.** Precise and auditable, but blind to terms absent

@@ -179,6 +179,8 @@ def _section(session: Session, entity_types: list[str], limit: int) -> dict:
                 "entity_name": p.entity_name,
                 "statement": p.statement,
                 "predicted_value": p.predicted_value,
+                "lower_bound": p.lower_bound,
+                "upper_bound": p.upper_bound,
                 "predicted_direction": p.predicted_direction,
                 "confidence": p.confidence,
                 "target_period": p.target_period,

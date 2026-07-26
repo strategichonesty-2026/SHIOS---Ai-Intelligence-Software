@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 EntityType = Literal["skill", "technology", "role", "company"]
 AudienceType = Literal["individual", "manager", "executive", "investor", "student"]
@@ -107,6 +107,9 @@ class PredictionRecordV1(Contract):
     horizon: str
     target_period: str
     predicted_value: float
+    lower_bound: float | None = None
+    upper_bound: float | None = None
+    interval_confidence: float | None = None
     predicted_direction: Direction
     confidence: float
     supporting_evidence_ids: list[str]
@@ -126,6 +129,15 @@ class PredictionRecordV1(Contract):
         if not 0.0 <= v <= 1.0:
             raise ValueError("confidence must be within 0.0-1.0")
         return v
+
+    @model_validator(mode="after")
+    def _interval_is_ordered(self) -> PredictionRecordV1:
+        if self.lower_bound is not None and self.upper_bound is not None:
+            if self.lower_bound > self.upper_bound:
+                raise ValueError("lower_bound must not exceed upper_bound")
+        if self.interval_confidence is not None and not 0.0 < self.interval_confidence < 1.0:
+            raise ValueError("interval_confidence must be strictly between 0.0 and 1.0")
+        return self
 
 
 # --- 5.6 Recommendation ----------------------------------------------------
@@ -177,6 +189,7 @@ class PredictionResultV1(Contract):
     predicted_value: float
     accuracy_score: float
     deviation: float
+    interval_covered: bool | None = None
     direction_correct: bool
     notes: str
     evaluated_at: datetime
@@ -195,6 +208,7 @@ class LearningFeedbackV1(Contract):
     accuracy_score: float
     false_positive: bool
     false_negative: bool
+    coverage_correct: bool | None = None
     confidence_calibration_delta: float
     signal_quality_notes: str
     created_at: datetime

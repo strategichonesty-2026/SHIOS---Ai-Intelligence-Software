@@ -1,12 +1,16 @@
 """5.5 Prediction Agent — simple, explainable forecasts.
 
-Method `ols_linear_v1`: ordinary least squares over the weekly series, extrapolated to the
-target period. Chosen over anything fancier because every published number has to be
-defensible in one sentence, and because with 8-12 observations a linear fit is the honest
-ceiling on what the data supports.
+Method `ols_interval_v1`: ordinary least squares over the weekly series, extrapolated to the
+target period and published as a two-sided 80% prediction interval (lower/upper bound) around
+the point estimate. The interval comes from the OLS residual standard error and a printed
+t-table — no model ever produces a number. Chosen over anything fancier because every
+published number has to be defensible in one sentence, and because with 8-12 observations a
+linear fit is the honest ceiling on what the data supports.
 
 Predictions are immutable once published (spec 5.5). Re-running the agent for a period that
 already has a prediction is a no-op; a changed forecast becomes a new version, never an edit.
+Predictions published under the earlier point method `ols_linear_v1` are left exactly as they
+were and continue to be scored on point accuracy by the Reality Check Agent.
 """
 
 from __future__ import annotations
@@ -27,11 +31,12 @@ from app.governance.rules import GovernanceError, enforce, evaluate_prediction
 from app.models.tables import Prediction, Trend
 from app.services.calibration import calibration_multiplier
 from app.services.periods import period_index, period_start_date, shift_period
-from app.services.stats import clamp, direction_of, linear_fit, stdev
+from app.services.stats import clamp, direction_of, linear_fit, prediction_interval_80, stdev
 
 log = logging.getLogger("shios.agents.prediction")
 
-METHOD = "ols_linear_v1"
+METHOD = "ols_interval_v1"
+INTERVAL_CONFIDENCE = 0.80  # nominal two-sided coverage of the published interval
 
 
 class PredictionAgent(Agent):
@@ -42,8 +47,11 @@ class PredictionAgent(Agent):
         "R-squared of the linear fit, discounted by series volatility and short history, "
         "then multiplied by the learned calibration factor for the metric."
     )
-    correctness_check = "Reality Check Agent scores the forecast against the actual value after expiry."
-    success_metric = "Mean accuracy above 0.70 with calibration delta trending toward zero."
+    correctness_check = (
+        "Reality Check Agent scores whether the actual value fell inside the published "
+        "80% interval after expiry."
+    )
+    success_metric = "Empirical interval coverage near 80%, with calibration delta trending toward zero."
     human_review = "required before external publication of any prediction below 0.5 confidence"
 
     def execute(self, session: Session, **kwargs: Any) -> dict[str, Any]:
@@ -103,7 +111,11 @@ class PredictionAgent(Agent):
             xs = [float(period_index(p.period)) for p in usable]
             ys = [float(p.value) for p in usable]
             fit = linear_fit(xs, ys)
-            predicted_value = max(0.0, round(fit.predict(float(period_index(target_period))), 2))
+            target_x = float(period_index(target_period))
+            predicted_value = max(0.0, round(fit.predict(target_x), 2))
+            raw_lower, raw_upper = prediction_interval_80(fit, target_x)
+            lower_bound = max(0.0, round(raw_lower, 2))
+            upper_bound = max(lower_bound, round(raw_upper, 2))
             last_value = ys[-1]
 
             confidence = self._confidence(session, fit, ys, metric, entity_type)
@@ -117,7 +129,8 @@ class PredictionAgent(Agent):
 
             statement = (
                 f"{metric.replace('_', ' ')} for {entity_type} '{entity_name}' is forecast at "
-                f"{predicted_value:.0f} in {target_period} "
+                f"{predicted_value:.0f} in {target_period}, within {lower_bound:.0f}-"
+                f"{upper_bound:.0f} at {INTERVAL_CONFIDENCE:.0%} confidence "
                 f"({'up' if direction == 'up' else 'down' if direction == 'down' else 'flat'} from "
                 f"{last_value:.0f} in {anchor_period})."
             )
@@ -146,6 +159,9 @@ class PredictionAgent(Agent):
                 horizon=f"{horizon_weeks}w",
                 target_period=target_period,
                 predicted_value=predicted_value,
+                lower_bound=lower_bound,
+                upper_bound=upper_bound,
+                interval_confidence=INTERVAL_CONFIDENCE,
                 predicted_direction=direction,
                 confidence=round(confidence, 4),
                 supporting_evidence_ids=evidence_ids,
