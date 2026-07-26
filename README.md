@@ -134,3 +134,4 @@ Set `API_KEY` to require an `x-api-key` header on everything except `/health`.
    makes the governance tests meaningful.
 5. **Failures are isolated.** One dead source never stops the loop; it emits
    `document.collection_failed` and the run continues on the sources that worked.
+# Last updated: Sun Jul 26 09:33:12 CDT 2026
