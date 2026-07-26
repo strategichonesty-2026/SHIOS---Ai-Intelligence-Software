@@ -2,3 +2,4 @@
 # Not needed for local development (SQLite) or CI (SQLite).
 psycopg[binary]==3.2.3
 pgvector==0.3.6
+psycopg2-binary==2.9.10
