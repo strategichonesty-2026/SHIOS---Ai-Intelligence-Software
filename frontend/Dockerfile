@@ -5,8 +5,8 @@ RUN npm ci 2>/dev/null || npm install
 
 FROM node:20-alpine AS builder
 WORKDIR /app
-ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
