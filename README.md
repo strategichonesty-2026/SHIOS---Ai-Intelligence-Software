@@ -1,5 +1,10 @@
 # SHIOS — Strategic Honesty Intelligence Operating System
 
+> **On macOS?** Read [docs/SETUP_MACOS.md](docs/SETUP_MACOS.md) before running anything.
+> It covers the Python-version trap (`str | None` TypeError), the iCloud duplicate-file
+> bug, and the exact virtualenv setup — skipping it is the single most common source of
+> wasted time on this project.
+
 **v1.0** — an AI-native intelligence loop that collects evidence, computes trends, publishes
 forecasts under enforced governance rules, scores those forecasts against what actually
 happened, and lowers its own confidence when it was wrong.
@@ -74,6 +79,7 @@ make up / down  start / stop the docker stack
 | Document | What it covers |
 |---|---|
 | [docs/ANALYSIS.md](docs/ANALYSIS.md) | Specification analysis, gaps found, decisions taken |
+| [docs/SETUP_MACOS.md](docs/SETUP_MACOS.md) | macOS Python-version and iCloud-sync setup traps |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Components, data flow, contracts, governance, TMS |
 | [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) | What v1 delivered, and milestones 2–5 |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Docker, Railway, secrets, migrations, rollback |
