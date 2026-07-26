@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  backend:
+  backend-fast:
+    name: Backend (lint + fast tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,7 +17,7 @@ jobs:
           cache: pip
       - name: Install dependencies
         working-directory: backend
-        run: pip install -r requirements-dev.txt
+        run: pip install -r requirements.txt -r requirements-dev.txt
       - name: Lint
         working-directory: backend
         run: ruff check app tests
@@ -25,11 +26,28 @@ jobs:
         env:
           DATABASE_URL: sqlite+pysqlite:///./ci.db
         run: alembic upgrade head
-      - name: Test
+      - name: Fast tests (governance, stats, retry)
         working-directory: backend
-        run: pytest -q --cov=app --cov-report=term-missing --cov-fail-under=80
+        run: pytest -q -m "not slow" --cov=app --cov-report=term-missing
+
+  backend-slow:
+    name: Backend (full loop tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        working-directory: backend
+        run: pip install -r requirements.txt -r requirements-dev.txt
+      - name: Full loop tests
+        working-directory: backend
+        run: pytest -q -m slow --cov=app --cov-report=term-missing --cov-fail-under=80
 
   frontend:
+    name: Frontend (type-check + build)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,8 +66,9 @@ jobs:
         run: npm run build
 
   docker:
+    name: Docker build
     runs-on: ubuntu-latest
-    needs: [backend]
+    needs: [backend-fast]
     steps:
       - uses: actions/checkout@v4
       - name: Build backend image

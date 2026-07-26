@@ -39,6 +39,7 @@ class TinySource(Source):
         ]
 
 
+@pytest.mark.slow
 def test_every_agent_answers_the_governance_questions():
     for name, cls in AGENTS.items():
         governance = cls.governance()
@@ -54,6 +55,7 @@ def test_every_agent_answers_the_governance_questions():
             assert governance[field].strip(), f"{name} has no answer for {field}"
 
 
+@pytest.mark.slow
 def test_failing_source_is_isolated_and_logged(db):
     output = CollectorAgent().run(db, sources=[BrokenSource(), TinySource()])
 
@@ -66,6 +68,7 @@ def test_failing_source_is_isolated_and_logged(db):
     assert "document.collection_failed" in events
 
 
+@pytest.mark.slow
 def test_agent_run_is_recorded_on_failure(db):
     class Exploding(Agent):
         name = "exploding"
@@ -82,6 +85,7 @@ def test_agent_run_is_recorded_on_failure(db):
     assert "boom" in run.error
 
 
+@pytest.mark.slow
 def test_extraction_writes_evidence_for_recognised_entities(db):
     collected = CollectorAgent().run(db, sources=[TinySource()])
     output = ExtractionAgent().run(db, raw_document_ids=collected["raw_document_ids"])
@@ -94,6 +98,7 @@ def test_extraction_writes_evidence_for_recognised_entities(db):
     assert all(e.snippet for e in evidence)
 
 
+@pytest.mark.slow
 def test_trend_agent_produces_a_gap_free_series(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -107,6 +112,7 @@ def test_trend_agent_produces_a_gap_free_series(db):
         assert periods == sorted(periods) or sorted(periods) == sorted(set(periods))
 
 
+@pytest.mark.slow
 def test_records_satisfy_their_published_contracts(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -121,6 +127,7 @@ def test_records_satisfy_their_published_contracts(db):
     assert len(RecommendationRecordV1.model_validate(recommendation).evidence_ids) >= 2
 
 
+@pytest.mark.slow
 def test_recommendation_agent_refuses_without_evidence(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -136,6 +143,7 @@ def test_recommendation_agent_refuses_without_evidence(db):
     assert db.query(Recommendation).count() == before
 
 
+@pytest.mark.slow
 def test_validator_flags_a_dangling_reference(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -155,6 +163,7 @@ def test_validator_flags_a_dangling_reference(db):
     assert recommendation.status == "needs_review"
 
 
+@pytest.mark.slow
 def test_reality_check_marks_unverifiable_rather_than_scoring_a_guess(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 

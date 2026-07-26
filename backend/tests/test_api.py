@@ -14,6 +14,7 @@ def seeded(db, client):
     return client
 
 
+@pytest.mark.slow
 def test_health_and_root(client):
     assert client.get("/").json()["name"] == "SHIOS"
 
@@ -22,6 +23,7 @@ def test_health_and_root(client):
     assert health["database"] == "up"
 
 
+@pytest.mark.slow
 def test_agent_catalog_is_exposed(client):
     payload = client.get("/api/v1/agents").json()
     names = {a["agent"] for a in payload["agents"]}
@@ -29,6 +31,7 @@ def test_agent_catalog_is_exposed(client):
     assert "sample_jobs" in payload["sources_available"]
 
 
+@pytest.mark.slow
 def test_dashboard_overview(seeded):
     payload = seeded.get("/api/v1/dashboard/overview").json()
     assert payload["counts"]["documents"] > 0
@@ -37,6 +40,7 @@ def test_dashboard_overview(seeded):
     assert payload["risers"] or payload["fallers"]
 
 
+@pytest.mark.slow
 def test_trend_endpoints(seeded):
     latest = seeded.get("/api/v1/trends/latest?entity_type=skill").json()
     assert latest["items"], "no latest trends returned"
@@ -50,6 +54,7 @@ def test_trend_endpoints(seeded):
     assert evidence["evidence"][0]["snippet"]
 
 
+@pytest.mark.slow
 def test_prediction_detail_exposes_its_own_uncertainty(seeded):
     listing = seeded.get("/api/v1/predictions?limit=5").json()
     assert listing["items"]
@@ -60,6 +65,7 @@ def test_prediction_detail_exposes_its_own_uncertainty(seeded):
     assert 0.0 <= detail["confidence"] <= 1.0
 
 
+@pytest.mark.slow
 def test_accuracy_endpoint_reports_calibration(seeded):
     payload = seeded.get("/api/v1/predictions/accuracy").json()
     assert payload["scored"] > 0
@@ -67,6 +73,7 @@ def test_accuracy_endpoint_reports_calibration(seeded):
     assert payload["calibration"]
 
 
+@pytest.mark.slow
 def test_recommendation_detail_and_human_decision(seeded):
     listing = seeded.get("/api/v1/recommendations?limit=5").json()
     assert listing["items"]
@@ -90,6 +97,7 @@ def test_recommendation_detail_and_human_decision(seeded):
     assert rejected.status_code == 422
 
 
+@pytest.mark.slow
 def test_reports_list_and_markdown_export(seeded):
     listing = seeded.get("/api/v1/reports").json()
     assert listing["items"]
@@ -103,6 +111,7 @@ def test_reports_list_and_markdown_export(seeded):
     assert export.headers["content-type"].startswith("text/markdown")
 
 
+@pytest.mark.slow
 def test_documents_and_evidence_are_traceable(seeded):
     listing = seeded.get("/api/v1/documents?doc_type=job&limit=3").json()
     assert listing["items"]
@@ -115,6 +124,7 @@ def test_documents_and_evidence_are_traceable(seeded):
     assert evidence["document"]["id"] == detail["id"]
 
 
+@pytest.mark.slow
 def test_explorer_returns_aligned_series(seeded):
     payload = seeded.get("/api/v1/dashboard/explorer?entity_type=skill&top=4").json()
     assert payload["periods"]
@@ -123,6 +133,7 @@ def test_explorer_returns_aligned_series(seeded):
         assert len(series["values"]) == len(payload["periods"])
 
 
+@pytest.mark.slow
 def test_runs_and_events_are_queryable(seeded):
     runs = seeded.get("/api/v1/runs?limit=10").json()
     assert runs["items"]
@@ -132,16 +143,19 @@ def test_runs_and_events_are_queryable(seeded):
     assert events["items"]
 
 
+@pytest.mark.slow
 def test_unknown_agent_returns_404(client):
     assert client.post("/api/v1/runs/agents/not-an-agent", json={}).status_code == 404
 
 
+@pytest.mark.slow
 def test_missing_resources_return_404(client):
     assert client.get("/api/v1/predictions/missing").status_code == 404
     assert client.get("/api/v1/reports/missing").status_code == 404
     assert client.get("/api/v1/recommendations/missing").status_code == 404
 
 
+@pytest.mark.slow
 def test_api_key_is_enforced_when_configured(client, monkeypatch):
     from app.api import deps
 

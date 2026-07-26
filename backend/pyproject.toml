@@ -8,6 +8,9 @@ requires-python = ">=3.11"
 testpaths = ["tests"]
 addopts = "-q"
 filterwarnings = ["ignore::DeprecationWarning"]
+markers = [
+    "slow: marks tests as slow (full intelligence loop); deselect with -m 'not slow'",
+]
 
 [tool.ruff]
 line-length = 120

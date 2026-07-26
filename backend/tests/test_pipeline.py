@@ -6,6 +6,7 @@ becomes trends, trends become forecasts, forecasts get scored, and scores change
 
 from __future__ import annotations
 
+import pytest
 from sqlalchemy import func, select
 
 from app.models.tables import (
@@ -30,6 +31,7 @@ def _count(db, model) -> int:
     return db.scalar(select(func.count()).select_from(model)) or 0
 
 
+@pytest.mark.slow
 def test_mvp_loop_produces_the_specified_chain(db):
     result = run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -45,6 +47,7 @@ def test_mvp_loop_produces_the_specified_chain(db):
     assert _count(db, Evidence) == result.evidence
 
 
+@pytest.mark.slow
 def test_full_loop_closes_the_learning_cycle(db):
     result = run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -59,6 +62,7 @@ def test_full_loop_closes_the_learning_cycle(db):
         assert db.get(PredictionResult, feedback.prediction_result_id) is not None
 
 
+@pytest.mark.slow
 def test_collection_is_idempotent(db):
     first = run_mvp_loop(db, source_ids=["sample_jobs"], limit=150)
     second = run_mvp_loop(db, source_ids=["sample_jobs"], limit=150)
@@ -67,6 +71,7 @@ def test_collection_is_idempotent(db):
     assert _count(db, RawDocument) == first.collected
 
 
+@pytest.mark.slow
 def test_trend_recomputation_is_stable(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=150)
     before = {(t.entity_type, t.entity_name, t.period): t.value for t in db.scalars(select(Trend))}
@@ -79,6 +84,7 @@ def test_trend_recomputation_is_stable(db):
     assert before == after
 
 
+@pytest.mark.slow
 def test_predictions_are_not_duplicated_for_the_same_target(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=150)
     before = _count(db, Prediction)
@@ -92,6 +98,7 @@ def test_predictions_are_not_duplicated_for_the_same_target(db):
     assert _count(db, Prediction) == before
 
 
+@pytest.mark.slow
 def test_every_recommendation_carries_at_least_two_evidence_ids(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -102,6 +109,7 @@ def test_every_recommendation_carries_at_least_two_evidence_ids(db):
         assert recommendation.trend_ids or recommendation.prediction_id
 
 
+@pytest.mark.slow
 def test_truth_maintenance_chain_has_no_dangling_references(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -116,6 +124,7 @@ def test_truth_maintenance_chain_has_no_dangling_references(db):
         assert db.get(Prediction, result.prediction_id) is not None
 
 
+@pytest.mark.slow
 def test_predictions_respect_the_ninety_day_review_rule(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -125,6 +134,7 @@ def test_predictions_respect_the_ninety_day_review_rule(db):
         assert (prediction.expiration_date - prediction.review_date).days <= 90
 
 
+@pytest.mark.slow
 def test_validator_records_unknowns_for_every_artefact(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -133,6 +143,7 @@ def test_validator_records_unknowns_for_every_artefact(db):
     assert all(v.unknowns_noted for v in validations)
 
 
+@pytest.mark.slow
 def test_learning_feedback_moves_confidence_on_a_second_pass(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -142,6 +153,7 @@ def test_learning_feedback_moves_confidence_on_a_second_pass(db):
     assert multiplier != 1.0, "scored forecasts did not feed back into confidence"
 
 
+@pytest.mark.slow
 def test_agent_runs_and_events_are_logged(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=150)
 
@@ -154,6 +166,7 @@ def test_agent_runs_and_events_are_logged(db):
     assert {"document.collected", "document.normalized", "trend.updated"}.issubset(events)
 
 
+@pytest.mark.slow
 def test_reports_are_generated_with_evidence(db):
     run_full_loop(db, source_ids=["sample_jobs"], limit=1000)
 
@@ -168,6 +181,7 @@ def test_reports_are_generated_with_evidence(db):
     assert "linkedin_post_draft" in types
 
 
+@pytest.mark.slow
 def test_sample_source_is_deterministic():
     first = SampleJobsSource(weeks=6, seed=7).collect(limit=60)
     second = SampleJobsSource(weeks=6, seed=7).collect(limit=60)
