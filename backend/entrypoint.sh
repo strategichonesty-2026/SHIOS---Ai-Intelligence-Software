@@ -1,10 +1,9 @@
 #!/usr/bin/env sh
-set -e
 echo "Starting SHIOS..."
 echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo yes || echo NO)"
 echo "ENVIRONMENT: ${ENVIRONMENT:-development}"
 echo "Running migrations..."
-alembic upgrade head
+alembic upgrade head || echo "Migration failed - continuing anyway"
 if [ "${BOOTSTRAP_ON_START}" = "true" ]; then
   echo "Bootstrapping..."
   python -m app.cli run --mode full || echo "Bootstrap failed; API will still start."
