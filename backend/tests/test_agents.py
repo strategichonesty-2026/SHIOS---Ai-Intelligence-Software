@@ -102,7 +102,11 @@ def test_extraction_writes_evidence_for_recognised_entities(db):
 def test_trend_agent_produces_a_gap_free_series(db):
     run_mvp_loop(db, source_ids=["sample_jobs"], limit=1000)
 
-    rows = list(db.scalars(select(Trend).where(Trend.entity_type == "skill")))
+    rows = list(db.scalars(
+        select(Trend)
+        .where(Trend.entity_type == "skill")
+        .where(Trend.metric == "job_postings_count")
+    ))
     by_entity: dict[str, list[str]] = {}
     for trend in rows:
         by_entity.setdefault(trend.entity_name, []).append(trend.period)

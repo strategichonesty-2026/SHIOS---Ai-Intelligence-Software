@@ -151,7 +151,7 @@ def recommendation_history(
 def _section(session: Session, entity_types: list[str], limit: int) -> dict:
     latest = session.scalar(select(func.max(Trend.period)))
     if latest is None:
-        return {"period": None, "top": [], "predictions": [], "salary_trends": []}
+        return {"period": None, "top": [], "predictions": []}
     top = list(
         session.scalars(
             select(Trend)
@@ -160,21 +160,6 @@ def _section(session: Session, entity_types: list[str], limit: int) -> dict:
             .order_by(Trend.value.desc())
             .limit(limit)
         )
-    )
-    top_names = [t.entity_name for t in top]
-    salary_trends = (
-        list(
-            session.scalars(
-                select(Trend)
-                .where(Trend.metric == "median_salary")
-                .where(Trend.period == latest)
-                .where(Trend.entity_type.in_(entity_types))
-                .where(Trend.entity_name.in_(top_names))
-                .order_by(Trend.value.desc())
-            )
-        )
-        if top_names
-        else []
     )
     predictions = list(
         session.scalars(
@@ -188,19 +173,6 @@ def _section(session: Session, entity_types: list[str], limit: int) -> dict:
     return {
         "period": latest,
         "top": [_trend(t) for t in top],
-        "salary_trends": [
-            {
-                "entity_name": t.entity_name,
-                "entity_type": t.entity_type,
-                "period": t.period,
-                "median_salary": t.value,
-                "delta": t.delta,
-                "direction": t.direction,
-                "sample_size": t.sample_size,
-                "note": "median of (salary_min + salary_max) / 2 across job postings with salary data",
-            }
-            for t in salary_trends
-        ],
         "predictions": [
             {
                 "id": p.id,
