@@ -23,3 +23,5 @@ out/
 # OS / editor
 .DS_Store
 *.swp
+venv/
+backend/venv/
