@@ -1,0 +1,23 @@
+FROM node:20-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci 2>/dev/null || npm install
+
+FROM node:20-alpine AS builder
+WORKDIR /app
+ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+RUN addgroup -g 10001 -S shios && adduser -S -u 10001 -G shios shios
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=shios:shios /app/.next/standalone ./
+COPY --from=builder --chown=shios:shios /app/.next/static ./.next/static
+USER shios
+EXPOSE 3000
+CMD ["node", "server.js"]

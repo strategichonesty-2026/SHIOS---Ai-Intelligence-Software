@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: theme("colors.paper");
+  color: theme("colors.ink");
+  font-family: theme("fontFamily.body");
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The evidence ledger: a hairline strip of ticks, one per evidence record behind a claim.
+   It is the one ornament in the interface, and it encodes something true — how much the
+   system actually has to stand on. */
+.ledger-tick {
+  width: 3px;
+  height: 10px;
+  background-color: theme("colors.proof");
+  opacity: 0.55;
+}
+
+.ledger-tick:nth-child(5n) {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise-in {
+    animation: rise 320ms cubic-bezier(0.2, 0.6, 0.2, 1) both;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid theme("colors.proof");
+  outline-offset: 2px;
+}
