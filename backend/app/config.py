@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     gmail_credentials_json: str | None = None
     gmail_query: str = "from:jobalerts-noreply@linkedin.com newer_than:7d"
 
+    # --- Source retry / resilience ----------------------------------------
+    source_max_retries: int = Field(default=3, description="Max attempts per source before giving up")
+    source_backoff_seconds: float = Field(default=5.0, description="Base wait between retries (exponential)")
+    source_timeout_seconds: float = Field(default=20.0, description="HTTP timeout per source request")
+
     # --- Governance -------------------------------------------------------
     min_evidence_per_recommendation: int = 2
     max_prediction_review_days: int = 90

@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.agents import governance_catalog
 from app.config import settings
+from app.config import settings as app_settings
 from app.db import get_session
 from app.models.tables import (
+    EventLog,
     Evidence,
     NormalizedDocument,
     Prediction,
@@ -16,7 +18,7 @@ from app.models.tables import (
     Report,
     Trend,
 )
-from app.sources import available_source_ids
+from app.sources import available_source_ids, build_sources
 
 router = APIRouter(tags=["system"])
 
@@ -34,7 +36,59 @@ def health(session: Session = Depends(get_session)) -> dict:
         "environment": settings.environment,
         "database": database,
         "llm_provider": settings.llm_provider,
+        "source_health": _source_health(session),
     }
+
+
+def _source_health(session: Session) -> dict:
+    """Summarise recent collection success/failure per source from the event log."""
+    recent_failures: dict[str, int] = {}
+    recent_successes: dict[str, int] = {}
+
+    failure_events = list(
+        session.scalars(
+            select(EventLog)
+            .where(EventLog.name == "document.collection_failed")
+            .order_by(EventLog.created_at.desc())
+            .limit(200)
+        )
+    )
+    success_events = list(
+        session.scalars(
+            select(EventLog)
+            .where(EventLog.name == "document.collected")
+            .order_by(EventLog.created_at.desc())
+            .limit(200)
+        )
+    )
+
+    for event in failure_events:
+        src = event.payload.get("source", "unknown")
+        recent_failures[src] = recent_failures.get(src, 0) + 1
+
+    for event in success_events:
+        src = event.payload.get("source", event.payload.get("raw_document_id", "unknown"))
+        recent_successes[src] = recent_successes.get(src, 0) + 1
+
+    configured = [s.source_id for s in build_sources() if s.is_configured()]
+    result: dict[str, dict] = {}
+    for source_id in configured:
+        failures = recent_failures.get(source_id, 0)
+        successes = recent_successes.get(source_id, 0)
+        total = failures + successes
+        result[source_id] = {
+            "status": "healthy" if failures == 0 else (
+                "degraded" if successes > 0 else "failing"
+            ),
+            "recent_successes": successes,
+            "recent_failures": failures,
+            "success_rate": round(successes / total, 2) if total else None,
+            "retry_config": {
+                "max_retries": app_settings.source_max_retries,
+                "backoff_seconds": app_settings.source_backoff_seconds,
+            },
+        }
+    return result
 
 
 @router.get("/ready")

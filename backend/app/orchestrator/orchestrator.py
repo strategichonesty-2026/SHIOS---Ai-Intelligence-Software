@@ -44,13 +44,14 @@ def run_mvp_loop(
     session: Session,
     *,
     source_ids: list[str] | None = None,
+    sources=None,
     limit: int = 500,
     horizon_weeks: int = 4,
     top_n: int = 5,
 ) -> PipelineResult:
     result = PipelineResult()
 
-    collected = CollectorAgent().run(session, source_ids=source_ids, limit=limit)
+    collected = CollectorAgent().run(session, source_ids=source_ids, sources=sources, limit=limit)
     result.collected = collected["collected"]
     result.errors += [f"collector:{f['source']}:{f['error']}" for f in collected.get("failures", [])]
 

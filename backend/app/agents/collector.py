@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agents.base import Agent
+from app.config import settings
 from app.events.bus import bus
 from app.events.types import EventName
 from app.models.tables import RawDocument
 from app.sources import Source, SourceError, build_sources
+from app.sources.base import RateLimitExceeded
 
 log = logging.getLogger("shios.agents.collector")
 
@@ -42,20 +45,30 @@ class CollectorAgent(Agent):
                 per_source[source.source_id] = 0
                 continue
             try:
-                items = source.collect(limit=limit)
+                items = _collect_with_retry(source, limit)
             except SourceError as exc:
-                failures.append({"source": source.source_id, "error": f"{type(exc).__name__}: {exc}"})
+                retry_count = getattr(exc, "retry_count", 0)
+                failures.append({
+                    "source": source.source_id,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "retry_count": retry_count,
+                })
                 bus.publish(
                     EventName.DOCUMENT_COLLECTION_FAILED,
-                    {"source": source.source_id, "error": str(exc)},
+                    {"source": source.source_id, "error": str(exc), "retry_count": retry_count},
                     session,
                 )
                 continue
             except Exception as exc:  # unexpected: still isolated per source
-                failures.append({"source": source.source_id, "error": f"{type(exc).__name__}: {exc}"})
+                retry_count = getattr(exc, "retry_count", 0)
+                failures.append({
+                    "source": source.source_id,
+                    "error": f"{type(exc).__name__}: {exc}",
+                    "retry_count": retry_count,
+                })
                 bus.publish(
                     EventName.DOCUMENT_COLLECTION_FAILED,
-                    {"source": source.source_id, "error": str(exc)},
+                    {"source": source.source_id, "error": str(exc), "retry_count": retry_count},
                     session,
                 )
                 continue
@@ -99,3 +112,38 @@ class CollectorAgent(Agent):
             "skipped_duplicates": skipped_duplicates,
             "failures": failures,
         }
+
+
+def _collect_with_retry(source: Source, limit: int) -> list:
+    """Wrap source.collect() with exponential backoff retry.
+
+    RateLimitExceeded is never retried. All other failures are retried up to
+    settings.source_max_retries times with exponential backoff. The retry
+    count is attached to the final SourceUnavailable so the collector can
+    include it in the event payload.
+    """
+    max_retries = settings.source_max_retries
+    backoff = settings.source_backoff_seconds
+    last_exc: Exception = SourceError("unknown")
+
+    for attempt in range(max_retries + 1):
+        try:
+            return source.collect(limit=limit)
+        except RateLimitExceeded:
+            raise  # never retry rate limits
+        except Exception as exc:
+            last_exc = exc
+            if attempt < max_retries:
+                wait = backoff * (2 ** attempt)
+                log.warning(
+                    "source=%s attempt=%d/%d failed, retrying in %.1fs: %s",
+                    source.source_id, attempt + 1, max_retries, wait, exc,
+                )
+                time.sleep(wait)
+            else:
+                log.error("source=%s exhausted %d retries: %s", source.source_id, max_retries, exc)
+
+    from app.sources.base import SourceUnavailable
+    err = SourceUnavailable(str(last_exc))
+    err.retry_count = max_retries  # type: ignore[attr-defined]
+    raise err
