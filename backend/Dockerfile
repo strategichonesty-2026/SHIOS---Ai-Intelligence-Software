@@ -10,8 +10,8 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends build-essential libpq5 curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY requirements.txt requirements-postgres.txt ./
+RUN pip install -r requirements.txt -r requirements-postgres.txt
 
 COPY . .
 
