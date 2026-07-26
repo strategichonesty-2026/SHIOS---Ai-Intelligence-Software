@@ -11,3 +11,6 @@ redis==5.2.1
 apscheduler==3.11.0
 python-multipart==0.0.20
 tenacity==9.0.0
+google-auth==2.36.0
+google-auth-oauthlib==1.2.1
+google-api-python-client==2.155.0
