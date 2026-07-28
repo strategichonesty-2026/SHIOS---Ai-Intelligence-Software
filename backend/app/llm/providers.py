@@ -103,6 +103,59 @@ class RuleBasedProvider(LLMProvider):
             "expected_outcomes": outcomes,
         }
 
+    def analyze_story(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
+        """Deterministic, template-based story analysis. Numbers come only from context['related_trends']."""
+        title = context.get("title", "this article")
+        related_trends = context.get("related_trends", [])
+
+        # Honesty requirement: state that analysis is templated, not model-generated.
+        honesty_note = (
+            "[Note: analysis fields are templated by the rule-based provider, not model-generated.]"
+        )
+
+        if related_trends:
+            trend = related_trends[0]
+            trend_summary = (
+                f"{trend['entity_name']} ({trend['entity_type']}) is trending {trend['direction']} "
+                f"with a value of {trend['value']} and a delta of {trend['delta']:+}."
+            )
+            business_impact = (
+                f"Based on observed trend data, {trend['entity_name']} shows a {trend['direction']} "
+                f"direction ({trend['delta']:+} change). Budget and hiring decisions tied to this "
+                f"signal should be reviewed at the next planning cycle."
+            )
+            technology_impact = (
+                f"Technology adoption signals for {trend['entity_name']} indicate a {trend['direction']} "
+                f"trajectory. Teams evaluating tooling in this area should factor this movement into "
+                f"roadmap decisions."
+            )
+        else:
+            trend_summary = "No trend data is available for the entities in this story yet."
+            business_impact = (
+                "No trend data is available for the entities in this story yet. "
+                "Business impact cannot be quantified from available signal."
+            )
+            technology_impact = (
+                "No trend data is available for the entities in this story yet. "
+                "Technology impact assessment is deferred until trend data is collected."
+            )
+
+        return {
+            "executive_summary": (
+                f"{honesty_note} This article covers '{title}'. {trend_summary}"
+            ),
+            "why_it_matters": (
+                f"This story touches signals the intelligence system is actively tracking. "
+                f"{trend_summary}"
+            ),
+            "business_impact": business_impact,
+            "technology_impact": technology_impact,
+            "strategic_recommendation": (
+                f"Monitor the entities mentioned in this article against the trend register. "
+                f"No directional claim is made beyond what the trend data supports. {honesty_note}"
+            ),
+        }
+
 
 class _HostedProvider(LLMProvider):
     """Shared plumbing for hosted providers with rule-based fallback."""
@@ -155,6 +208,21 @@ class _HostedProvider(LLMProvider):
             "alternative_scenarios (array), expected_outcomes (array). No hype. Signal over noise."
         )
         user = f"Audience: {audience}\nEvidence context: {json.dumps(context, default=str)}"
+        return self._json_call(system, user, fallback)
+
+    def analyze_story(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
+        fallback = self._fallback.analyze_story(text, context)
+        system = (
+            "You analyse news articles for an intelligence system. Never invent numbers or trends. "
+            "Use only what the supplied context provides. "
+            "Respond with JSON only, no prose, no markdown fences. Keys: "
+            "executive_summary, why_it_matters, business_impact, technology_impact, "
+            "strategic_recommendation."
+        )
+        user = (
+            f"Article text (truncated): {textwrap.shorten(text, 4000)}\n"
+            f"Context: {json.dumps(context, default=str)}"
+        )
         return self._json_call(system, user, fallback)
 
 

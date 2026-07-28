@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
 import { titleCase } from "@/lib/format";
-import { Eyebrow } from "@/components/ui";
+import { Card, Eyebrow, Stat } from "@/components/ui";
+import { TrustPanel } from "@/components/trust";
+import { intelligence } from "@/lib/intelligence";
 
 export const dynamic = "force-dynamic";
 
@@ -109,6 +111,11 @@ export default async function ReportPage({ params }: { params: { id: string } })
   const report = await api.report(params.id);
   if (!report) notFound();
 
+  const trust = await intelligence.trust("report", params.id);
+  const stories: any[] = report.report_type === "executive_brief"
+    ? (report.payload?.stories ?? [])
+    : [];
+
   return (
     <article className="rise-in max-w-3xl">
       <Link href="/reports" className="font-mono text-xs text-muted hover:text-proof">
@@ -119,9 +126,62 @@ export default async function ReportPage({ params }: { params: { id: string } })
           {titleCase(report.report_type)} · {report.period_start} → {report.period_end}
         </Eyebrow>
       </div>
+
       <div className="mt-4 rounded-card border border-line bg-surface p-6">
         {renderMarkdown(report.body_markdown)}
       </div>
+
+      {report.report_type === "executive_brief" && stories.length > 0 && (
+        <div className="mt-6 space-y-4">
+          <Eyebrow>Stories</Eyebrow>
+          {stories.map((story: any) => (
+            <Card key={story.document_id} className="p-5 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="font-display text-base font-bold leading-snug">{story.title}</h3>
+                <Stat
+                  label="Read"
+                  value={`${story.reading_time_minutes}m`}
+                />
+              </div>
+              <p className="font-mono text-xs text-muted">
+                {story.source} · {story.published_at?.slice(0, 10)}{" "}
+                {story.original_url ? (
+                  <a href={story.original_url} className="text-proof hover:underline" target="_blank" rel="noopener noreferrer">
+                    Read article →
+                  </a>
+                ) : (
+                  <span className="text-muted">Source not linked</span>
+                )}
+              </p>
+              {story.related_trends?.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {story.related_trends.map((t: any, i: number) => (
+                    <Stat
+                      key={i}
+                      label={t.entity_name}
+                      value={String(t.value)}
+                      note={`${t.delta >= 0 ? "+" : ""}${t.delta} · ${t.direction}`}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="text-sm leading-relaxed">{story.executive_summary}</p>
+              <dl className="grid gap-2 sm:grid-cols-2 text-sm">
+                <div><dt className="font-mono text-xs text-muted uppercase">Why it matters</dt><dd>{story.why_it_matters}</dd></div>
+                <div><dt className="font-mono text-xs text-muted uppercase">Business impact</dt><dd>{story.business_impact}</dd></div>
+                <div><dt className="font-mono text-xs text-muted uppercase">Technology impact</dt><dd>{story.technology_impact}</dd></div>
+                <div><dt className="font-mono text-xs text-muted uppercase">Recommendation</dt><dd>{story.strategic_recommendation}</dd></div>
+              </dl>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {trust && (
+        <div className="mt-6">
+          <TrustPanel trust={trust} />
+        </div>
+      )}
     </article>
   );
 }

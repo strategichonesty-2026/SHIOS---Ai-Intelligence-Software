@@ -224,6 +224,7 @@ ReportType = Literal[
     "social_summary",
     "linkedin_article_draft",
     "linkedin_post_draft",
+    "executive_brief",
 ]
 
 

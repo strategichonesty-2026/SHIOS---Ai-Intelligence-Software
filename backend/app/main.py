@@ -11,9 +11,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import require_api_key
 from app.api.routers import (
     dashboard,
-    intelligence,
     documents,
     health,
+    intelligence,
     predictions,
     recommendations,
     reports,

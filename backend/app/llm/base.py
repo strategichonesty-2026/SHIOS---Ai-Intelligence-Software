@@ -25,6 +25,11 @@ class LLMProvider(ABC):
     def generate_recommendation(self, context: dict[str, Any], audience: str) -> dict[str, Any]:
         """Return {recommendation_text, rationale, risks[], alternative_scenarios[], expected_outcomes[]}."""
 
+    @abstractmethod
+    def analyze_story(self, text: str, context: dict[str, Any]) -> dict[str, Any]:
+        """Return {executive_summary, why_it_matters, business_impact,
+        technology_impact, strategic_recommendation}."""
+
 
 class LLMError(RuntimeError):
     pass

@@ -76,7 +76,10 @@ export type ReportSummary = {
   created_at: string;
 };
 
-export type ReportDetail = ReportSummary & { body_markdown: string };
+export type ReportDetail = ReportSummary & {
+  body_markdown: string;
+  payload: Record<string, any>;
+};
 
 export async function safeGet<T>(path: string): Promise<T | null> {
   try {
