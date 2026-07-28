@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
-import { titleCase, weekToDateRange } from "@/lib/format";
+import { titleCase, humanizeStatement, weekToDateRange } from "@/lib/format";
 import { Card, Eyebrow, Stat } from "@/components/ui";
 import { TrustPanel } from "@/components/trust";
 import { intelligence } from "@/lib/intelligence";
@@ -128,7 +128,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
       </div>
 
       <div className="mt-4 rounded-card border border-line bg-surface p-6">
-        {renderMarkdown(report.body_markdown)}
+        {renderMarkdown(humanizeStatement(report.body_markdown))}
       </div>
 
       {report.report_type === "executive_brief" && stories.length > 0 && (

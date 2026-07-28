@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { shortDate, titleCase, weekToDateRange } from "@/lib/format";
+import { shortDate, titleCase, humanizeStatement, weekToDateRange } from "@/lib/format";
 import { Card, Empty, Eyebrow } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +34,9 @@ export default async function ReportsPage() {
                   {titleCase(report.report_type)} · {weekToDateRange(report.period_start)} → {weekToDateRange(report.period_end)}
                 </p>
                 <p className="mt-1 font-display text-lg font-bold tracking-tight group-hover:text-proof">
-                  {report.title}
+                  {humanizeStatement(report.title)}
                 </p>
-                {report.subtitle ? <p className="mt-1 text-sm text-muted">{report.subtitle}</p> : null}
+                {report.subtitle ? <p className="mt-1 text-sm text-muted">{humanizeStatement(report.subtitle)}</p> : null}
                 <p className="mt-1 font-mono text-xs text-muted">{shortDate(report.created_at)}</p>
               </Link>
             </li>

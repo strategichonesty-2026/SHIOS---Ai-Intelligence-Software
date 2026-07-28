@@ -26,6 +26,14 @@ export function shortDate(value: string): string {
 }
 
 /**
+ * Replace all ISO week codes inside a forecast statement string with readable date ranges.
+ * e.g. "forecast at 7 in 2026-W26, within..." → "forecast at 7 in Jun 22–28, 2026, within..."
+ */
+export function humanizeStatement(statement: string): string {
+  return statement.replace(/\d{4}-W\d{2}/g, (match) => weekToDateRange(match));
+}
+
+/**
  * Convert ISO week string (e.g. "2026-W20") to a human date range.
  * Returns e.g. "May 12–18, 2026"
  * Falls back to the original string if it doesn't match the pattern.
