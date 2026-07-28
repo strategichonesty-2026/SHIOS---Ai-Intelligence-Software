@@ -36,6 +36,15 @@ export default async function JobsPage({
         </p>
       </header>
 
+      {jobs.items.every((j: JobRow) => j.synthetic) && (
+        <div className="rounded-card border border-provisional bg-provisional/10 px-4 py-3 text-sm">
+          <strong className="text-provisional">Demo data only.</strong>{" "}
+          All job postings shown are computer-generated samples, not real job listings. Company names,
+          salaries, and skills are synthetic. Trends built from this data show how the system works,
+          but should not be used for real career or hiring decisions until a live data source is connected.
+        </div>
+      )}
+
       {facets ? (
         <div className="grid gap-3 sm:grid-cols-3">
           <Stat label="Postings" value={facets.total_jobs.toLocaleString()} note="in the corpus" />

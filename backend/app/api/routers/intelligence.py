@@ -43,10 +43,10 @@ router = APIRouter(tags=["intelligence"])
 
 SOURCE_CATALOGUE: dict[str, dict[str, Any]] = {
     "sample_jobs": {
-        "label": "Synthetic job postings",
+        "label": "Demo job postings (not real)",
         "category": "Job Postings",
         "reliability": "reference-only",
-        "basis": "Deterministically generated for demonstration and testing. Not market data.",
+        "basis": "Computer-generated sample data for demonstration purposes only. These are not real job listings. Use this to explore how the system works, but connect a live job feed before drawing any real conclusions.",
         "synthetic": True,
         "primary": False,
     },
@@ -87,11 +87,11 @@ DOC_TYPE_CATEGORY = {
 # Source types this specification asks for that SHIOS does not currently read.
 # Listed so the UI can show the gap instead of implying coverage that isn't there.
 NOT_COLLECTED = [
-    {"category": "Research Papers", "note": "No arXiv/Semantic Scholar collector exists yet."},
-    {"category": "Company Career Pages", "note": "No direct ATS/career-site scraper exists yet."},
-    {"category": "Government Data", "note": "No BLS/ONS or equivalent labour-statistics collector exists yet."},
-    {"category": "SEC Filings", "note": "No EDGAR collector exists yet."},
-    {"category": "User Uploaded Documents", "note": "No upload ingestion path exists yet."},
+    {"category": "Research Papers", "note": "We don't yet read academic research databases like Google Scholar or PubMed. Academic citations are not included in these trends."},
+    {"category": "Company Career Pages", "note": "We don't yet pull directly from company websites or job application systems (like Greenhouse or Workday). Only the connected job feeds are read."},
+    {"category": "Government Data", "note": "We don't yet include official labour statistics from sources like the US Bureau of Labor Statistics. Government employment data is not reflected here."},
+    {"category": "SEC Filings", "note": "We don't yet read company financial filings. Hiring plans mentioned in earnings reports or 10-K filings are not captured."},
+    {"category": "User Uploaded Documents", "note": "There is no way to upload your own documents yet. Only the configured data sources are read automatically."},
 ]
 
 

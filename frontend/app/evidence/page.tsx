@@ -40,7 +40,7 @@ export default async function EvidencePage() {
               <td className="py-3 pr-4">
                 <span className="font-medium">{c.category}</span>
                 {c.synthetic_only ? (
-                  <span className="ml-2 font-mono text-xs text-provisional">synthetic only</span>
+                  <span className="ml-2 font-mono text-xs text-provisional">demo data — not real</span>
                 ) : null}
               </td>
               <td className="py-3 pr-4 font-mono tabular-nums">{c.evidence_count.toLocaleString()}</td>
