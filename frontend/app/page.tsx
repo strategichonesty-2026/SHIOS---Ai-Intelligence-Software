@@ -2,7 +2,7 @@ import Link from "next/link";
 import { api, type Trend } from "@/lib/api";
 import { reliabilityBand } from "@/lib/intelligence";
 import { ReliabilityBadge } from "@/components/trust";
-import { percent, signed } from "@/lib/format";
+import { percent, signed, weekToDateRange } from "@/lib/format";
 import { Card, DirectionTag, Empty, EvidenceLedger, Eyebrow, Stat, Table } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -30,7 +30,7 @@ export default async function OverviewPage() {
     <div className="space-y-8">
       <section className="rise-in">
         <Eyebrow>
-          Observation window {window.first_period} → {window.latest_period}
+          Observation window {weekToDateRange(window.first_period ?? "")} → {weekToDateRange(window.latest_period ?? "")}
         </Eyebrow>
         <h1 className="mt-2 max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
           The system publishes its forecasts and its misses on the same page.

@@ -1,5 +1,5 @@
 import { api, type Trend } from "@/lib/api";
-import { signed } from "@/lib/format";
+import { signed, weekToDateRange } from "@/lib/format";
 import { Card, DirectionTag, Empty, EvidenceLedger, Eyebrow, Sparkline, Table } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +24,7 @@ export default async function TrendsPage({
   return (
     <div className="space-y-8">
       <header>
-        <Eyebrow>Trend explorer · period {latest.period}</Eyebrow>
+        <Eyebrow>Trend explorer · week of {weekToDateRange(latest.period ?? "")}</Eyebrow>
         <h1 className="mt-2 font-display text-3xl font-bold tracking-tight">
           What the documents actually mention
         </h1>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { api } from "@/lib/api";
-import { titleCase } from "@/lib/format";
+import { titleCase, weekToDateRange } from "@/lib/format";
 import { Card, Eyebrow, Stat } from "@/components/ui";
 import { TrustPanel } from "@/components/trust";
 import { intelligence } from "@/lib/intelligence";
@@ -123,7 +123,7 @@ export default async function ReportPage({ params }: { params: { id: string } })
       </Link>
       <div className="mt-4">
         <Eyebrow>
-          {titleCase(report.report_type)} · {report.period_start} → {report.period_end}
+          {titleCase(report.report_type)} · {weekToDateRange(report.period_start)} → {weekToDateRange(report.period_end)}
         </Eyebrow>
       </div>
 

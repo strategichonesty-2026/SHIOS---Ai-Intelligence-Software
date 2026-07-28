@@ -9,7 +9,8 @@ including the misses.
 from __future__ import annotations
 
 import math
-from datetime import UTC, datetime
+import re
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -32,6 +33,22 @@ from app.models.tables import (
     Trend,
 )
 from app.services.stats import mean
+
+def _week_to_date_range(period: str) -> str:
+    """Convert '2026-W20' → 'May 12–18, 2026'. Returns original string if not an ISO week."""
+    m = re.match(r"^(\d{4})-W(\d{2})$", period)
+    if not m:
+        return period
+    year, week = int(m.group(1)), int(m.group(2))
+    # Monday of ISO week 1 = Monday on or before Jan 4
+    jan4 = datetime(year, 1, 4)
+    w1_monday = jan4 - timedelta(days=(jan4.weekday()))
+    monday = w1_monday + timedelta(weeks=week - 1)
+    sunday = monday + timedelta(days=6)
+    if monday.month == sunday.month:
+        return f"{monday.strftime('%b')} {monday.day}–{sunday.day}, {sunday.year}"
+    return f"{monday.strftime('%b %-d')}–{sunday.strftime('%b %-d')}, {sunday.year}"
+
 
 REPORT_TYPES = [
     "weekly_report",
@@ -160,6 +177,8 @@ class ReportingAgent(Agent):
         return {
             "latest_period": latest_period or "",
             "first_period": first_period or "",
+            "latest_period_fmt": _week_to_date_range(latest_period or ""),
+            "first_period_fmt": _week_to_date_range(first_period or ""),
             "movers": movers,
             "risers": risers,
             "fallers": fallers,
@@ -322,10 +341,10 @@ class ReportingAgent(Agent):
     # All builders now return (title, subtitle, body, extra_payload, evidence_ids) | None
 
     def _weekly(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
-        title = f"Weekly intelligence — {snapshot['latest_period']}"
+        title = f"Weekly intelligence — {snapshot['latest_period_fmt']}"
         body = f"""# {title}
 
-Window: {snapshot['first_period']} to {snapshot['latest_period']}.
+Window: {snapshot['first_period_fmt']} to {snapshot['latest_period_fmt']}.
 
 ## What moved
 {self._movement_table(snapshot)}
@@ -345,7 +364,7 @@ Window: {snapshot['first_period']} to {snapshot['latest_period']}.
         return title, "Evidence-backed movement in the configured sources", body, {}, snapshot["evidence_ids"]
 
     def _monthly(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
-        title = f"Monthly intelligence review — through {snapshot['latest_period']}"
+        title = f"Monthly intelligence review — through {snapshot['latest_period_fmt']}"
         body = f"""# {title}
 
 ## Movement over the observed window
@@ -366,7 +385,7 @@ least squares over that series. Nothing here is model-generated speculation.
     def _executive(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
         risers = ", ".join(t.entity_name for t in snapshot["risers"][:3]) or "none"
         fallers = ", ".join(t.entity_name for t in snapshot["fallers"][:3]) or "none"
-        title = f"Executive summary — {snapshot['latest_period']}"
+        title = f"Executive summary — {snapshot['latest_period_fmt']}"
         body = f"""# {title}
 
 **Rising:** {risers}
@@ -401,7 +420,7 @@ Here is the count.
 
 {self._movement_table(snapshot)}
 
-Over the window {snapshot['first_period']} to {snapshot['latest_period']}, mentions of
+Over the window {snapshot['first_period_fmt']} to {snapshot['latest_period_fmt']}, mentions of
 **{top.entity_name}** moved {top.delta:+.0f} week over week, to {top.value:.0f}.
 
 {self._accuracy_line(snapshot)}
@@ -420,7 +439,7 @@ does not know your situation — only the market's.
 
     def _social(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
         top = snapshot["risers"][0] if snapshot["risers"] else snapshot["movers"][0]
-        title = f"Social summary — {snapshot['latest_period']}"
+        title = f"Social summary — {snapshot['latest_period_fmt']}"
         accuracy_note = (
             f"Accuracy on scored forecasts: {snapshot['accuracy']:.2f}."
             if snapshot["accuracy"] is not None
@@ -428,7 +447,7 @@ does not know your situation — only the market's.
         )
         body = (
             f"{top.entity_name} mentions: {top.value:.0f} this week ({top.delta:+.0f}).\n"
-            f"Window: {snapshot['first_period']}–{snapshot['latest_period']}.\n"
+            f"Window: {snapshot['first_period_fmt']}–{snapshot['latest_period_fmt']}.\n"
             f"{accuracy_note}\n"
             f"Counts first, conclusions second."
         )
@@ -437,13 +456,13 @@ does not know your situation — only the market's.
     def _linkedin_article(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
         top = snapshot["risers"][0] if snapshot["risers"] else snapshot["movers"][0]
         title = f"{top.entity_name} is moving. Here is the evidence, and here is what it is not."
-        subtitle = f"Weekly read on {snapshot['latest_period']}, with the misses included"
+        subtitle = f"Weekly read on {snapshot['latest_period_fmt']}, with the misses included"
         body = f"""# {title}
 
 *{subtitle}*
 
 I run a small intelligence system over job postings. It counts, it forecasts, and then it
-grades its own forecasts. This is the {snapshot['latest_period']} read.
+grades its own forecasts. This is the {snapshot['latest_period_fmt']} read.
 
 ## The movement
 {self._movement_table(snapshot)}
@@ -477,7 +496,7 @@ turn. Those limits are in the system's own records, not just this post.
         )
         body = f"""{top.entity_name} mentions moved {top.delta:+.0f} this week, to {top.value:.0f}.
 
-Window: {snapshot['first_period']} to {snapshot['latest_period']}. Source: configured job feeds only.
+Window: {snapshot['first_period_fmt']} to {snapshot['latest_period_fmt']}. Source: configured job feeds only.
 
 {accuracy}
 
@@ -486,7 +505,7 @@ score is the harder part.
 
 #CareerIntelligence #Agile #DataInformed #StrategicHonesty"""
         return (
-            f"Post draft — {snapshot['latest_period']}",
+            f"Post draft — {snapshot['latest_period_fmt']}",
             "",
             body,
             {},

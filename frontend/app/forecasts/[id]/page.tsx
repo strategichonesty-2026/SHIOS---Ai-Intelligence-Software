@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { safeGet } from "@/lib/api";
 import { intelligence } from "@/lib/intelligence";
-import { percent, shortDate } from "@/lib/format";
+import { percent, shortDate, weekToDateRange } from "@/lib/format";
 import { Card, ConfidenceBar, Eyebrow, Sparkline } from "@/components/ui";
 import { BackLink, TrustPanel } from "@/components/trust";
 
@@ -56,7 +56,7 @@ export default async function ForecastDetailPage({ params }: { params: { id: str
       <div className="grid gap-5 lg:grid-cols-2">
         <Card eyebrow="What was claimed" title="The forecast">
           <dl className="space-y-2 text-sm">
-            <Row k="Target period" v={detail.target_period} />
+            <Row k="Target period" v={weekToDateRange(detail.target_period)} />
             <Row k="Predicted value" v={detail.predicted_value.toFixed(1)} />
             <Row k="Direction" v={detail.predicted_direction} />
             <Row k="Method" v={detail.method} />
@@ -99,8 +99,8 @@ export default async function ForecastDetailPage({ params }: { params: { id: str
           <Sparkline values={detail.series.map((p) => p.value)} width={520} height={60} />
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted">
             {detail.series.map((p) => (
-              <span key={p.period}>
-                {p.period}: {p.value.toFixed(0)}
+                <span key={p.period}>
+                {weekToDateRange(p.period)}: {p.value.toFixed(0)}
               </span>
             ))}
           </div>

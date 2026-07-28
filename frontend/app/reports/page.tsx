@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { shortDate, titleCase } from "@/lib/format";
+import { shortDate, titleCase, weekToDateRange } from "@/lib/format";
 import { Card, Empty, Eyebrow } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +31,7 @@ export default async function ReportsPage() {
             <li key={report.id} className="py-4 first:pt-0 last:pb-0">
               <Link href={`/reports/${report.id}`} className="group block">
                 <p className="text-eyebrow font-mono uppercase text-muted">
-                  {titleCase(report.report_type)} · {report.period_start} → {report.period_end}
+                  {titleCase(report.report_type)} · {weekToDateRange(report.period_start)} → {weekToDateRange(report.period_end)}
                 </p>
                 <p className="mt-1 font-display text-lg font-bold tracking-tight group-hover:text-proof">
                   {report.title}

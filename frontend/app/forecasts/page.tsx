@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { api, type Prediction } from "@/lib/api";
-import { percent, shortDate } from "@/lib/format";
+import { percent, shortDate, weekToDateRange } from "@/lib/format";
 import { Card, ConfidenceBar, Empty, EvidenceLedger, Eyebrow, Stat, Table } from "@/components/ui";
 import { ReliabilityBadge } from "@/components/trust";
 import { reliabilityBand } from "@/lib/intelligence";
@@ -56,7 +56,7 @@ export default async function ForecastHistoryPage() {
                 </Link>
                 <p className="mt-1 font-mono text-xs text-muted">{p.id.slice(0, 8)}</p>
               </td>
-              <td className="py-3 pr-4 font-mono text-xs tabular-nums">{p.target_period}</td>
+              <td className="py-3 pr-4 font-mono text-xs tabular-nums">{weekToDateRange(p.target_period)}</td>
               <td className="py-3 pr-4">
                 <ConfidenceBar confidence={p.confidence} />
               </td>
