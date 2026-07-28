@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { api, type Trend } from "@/lib/api";
+import { reliabilityBand } from "@/lib/intelligence";
+import { ReliabilityBadge } from "@/components/trust";
 import { percent, signed } from "@/lib/format";
 import { Card, DirectionTag, Empty, EvidenceLedger, Eyebrow, Stat, Table } from "@/components/ui";
 
@@ -17,6 +20,7 @@ export default async function OverviewPage() {
   }
 
   const { accuracy, counts, window } = overview;
+  const band = reliabilityBand(accuracy.mean_calibration_delta);
   const trackRecord =
     accuracy.scored === 0
       ? "No forecast has reached its expiration date yet. Nothing here is proven."
@@ -35,38 +39,37 @@ export default async function OverviewPage() {
       </section>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat
-          label="Forecast accuracy"
-          value={percent(accuracy.mean_accuracy)}
-          note={`across ${accuracy.scored} scored forecasts`}
-        />
+        <Link href="/forecasts" className="block transition-colors hover:border-proof">
+          <Stat
+            label="Forecast accuracy →"
+            value={percent(accuracy.mean_accuracy)}
+            note={`across ${accuracy.scored} scored forecasts`}
+          />
+        </Link>
         <Stat
           label="Direction called right"
           value={percent(accuracy.direction_hit_rate)}
           note="up, down or flat"
         />
-        <Stat
-          label="Calibration delta"
-          value={
-            accuracy.mean_calibration_delta === null
-              ? "—"
-              : `${accuracy.mean_calibration_delta > 0 ? "+" : ""}${accuracy.mean_calibration_delta.toFixed(2)}`
-          }
-          note={
-            accuracy.mean_calibration_delta === null
-              ? "no scored forecasts"
-              : accuracy.mean_calibration_delta < -0.05
-                ? "overconfident — confidence lowered"
-                : accuracy.mean_calibration_delta > 0.05
-                  ? "underconfident — confidence raised"
-                  : "confidence tracks accuracy"
-          }
-        />
-        <Stat
-          label="Evidence base"
-          value={counts.documents.toLocaleString()}
-          note={`${counts.tracked_entities} entities tracked`}
-        />
+        <div className="rounded-card border border-line bg-surface px-4 py-3">
+          <Eyebrow>Confidence reliability</Eyebrow>
+          <div className="mt-2">
+            <ReliabilityBadge label={band.label} tone={band.tone} />
+          </div>
+          <p
+            className="mt-2 text-xs text-muted"
+            title="This measures how closely the system's confidence matched actual outcomes. Smaller differences indicate more reliable forecasting."
+          >
+            {band.meaning}
+          </p>
+        </div>
+        <Link href="/evidence" className="block transition-colors hover:border-proof">
+          <Stat
+            label="Evidence base →"
+            value={counts.documents.toLocaleString()}
+            note={`${counts.tracked_entities} entities tracked`}
+          />
+        </Link>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">

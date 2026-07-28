@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.deps import require_api_key
 from app.api.routers import (
     dashboard,
+    intelligence,
     documents,
     health,
     predictions,
@@ -72,6 +73,7 @@ app.include_router(recommendations.router, prefix=API_PREFIX, dependencies=prote
 app.include_router(reports.router, prefix=API_PREFIX, dependencies=protected)
 app.include_router(runs.router, prefix=API_PREFIX, dependencies=protected)
 app.include_router(trends.router, prefix=API_PREFIX, dependencies=protected)
+app.include_router(intelligence.router, prefix=API_PREFIX, dependencies=protected)
 
 
 @app.get("/")
