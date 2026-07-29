@@ -10,10 +10,12 @@ from app.sources.base import (
     SourceUnavailable,
 )
 from app.sources.external import GitHubSource, GmailSource, RSSSource
+from app.sources.remoteok import RemoteOKSource
 from app.sources.sample_jobs import SampleJobsSource
 
 _FACTORIES = {
     SampleJobsSource.source_id: SampleJobsSource,
+    RemoteOKSource.source_id: RemoteOKSource,
     RSSSource.source_id: RSSSource,
     GitHubSource.source_id: GitHubSource,
     GmailSource.source_id: GmailSource,
@@ -31,6 +33,7 @@ def available_source_ids() -> list[str]:
 
 __all__ = [
     "CollectedItem",
+    "RemoteOKSource",
     "GitHubSource",
     "GmailSource",
     "ParseError",
