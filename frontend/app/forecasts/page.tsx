@@ -64,7 +64,7 @@ export default async function ForecastHistoryPage() {
                 {shortDate(p.review_date)}
               </td>
               <td className="py-3 pr-4">
-                <EvidenceLedger count={p.evidence_count} max={10} />
+                <EvidenceLedger count={p.evidence_count} max={10} href={`/forecasts/${p.id}`} />
               </td>
               <td className="py-3">
                 <StatusTag status={p.status} />

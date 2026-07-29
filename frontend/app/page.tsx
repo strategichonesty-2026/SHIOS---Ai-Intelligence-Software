@@ -124,7 +124,7 @@ function MoverTable({ movers, empty }: { movers: Trend[]; empty: string }) {
             </span>
           </td>
           <td className="py-2">
-            <EvidenceLedger count={trend.evidence_count} max={12} />
+            <EvidenceLedger count={trend.evidence_count} max={12} href={`/trends/${trend.id}`} />
           </td>
         </tr>
       ))}

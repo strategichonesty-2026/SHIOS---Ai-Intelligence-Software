@@ -47,7 +47,7 @@ export default async function RecommendationsPage() {
                 <p className="text-sm leading-relaxed">{item.recommendation_text}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-2">
                   <ConfidenceBar confidence={item.confidence} />
-                  <EvidenceLedger count={item.evidence_count} max={16} />
+                  <EvidenceLedger count={item.evidence_count} max={16} href={`/recommendations/${item.id}`} />
                   <span
                     className={`font-mono text-xs uppercase ${
                       item.status === "needs_review" ? "text-provisional" : "text-muted"

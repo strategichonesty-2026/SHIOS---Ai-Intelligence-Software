@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { confidenceLabel, percent, signed } from "@/lib/format";
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
@@ -43,10 +44,13 @@ export function Stat({
 }
 
 /** Signature element: one tick per piece of evidence, capped, with the exact count beside it. */
-export function EvidenceLedger({ count, max = 24 }: { count: number; max?: number }) {
+export function EvidenceLedger({ count, max = 24, href }: { count: number; max?: number; href?: string }) {
   const ticks = Math.min(count, max);
-  return (
-    <div className="flex items-center gap-2" title={`${count} evidence records`}>
+  const inner = (
+    <div
+      className={`flex items-center gap-2 ${href ? "group hover:opacity-80 transition-opacity" : ""}`}
+      title={href ? `View ${count} source documents` : `${count} evidence records`}
+    >
       <div className="flex items-end gap-[2px]" aria-hidden>
         {Array.from({ length: ticks }).map((_, index) => (
           <span key={index} className="ledger-tick" />
@@ -57,8 +61,10 @@ export function EvidenceLedger({ count, max = 24 }: { count: number; max?: numbe
         {count}
         {count > max ? "+" : ""}
       </span>
+      {href ? <span className="font-mono text-xs text-proof opacity-0 group-hover:opacity-100 transition-opacity">→</span> : null}
     </div>
   );
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }
 
 export function ConfidenceBar({ confidence }: { confidence: number }) {
