@@ -47,7 +47,17 @@ export type Recommendation = {
   confidence: number;
   status: string;
   evidence_count: number;
+  prediction_id: string | null;
   created_at: string;
+};
+
+export type RecommendationDetail = Recommendation & {
+  rationale: string | null;
+  risks: string | null;
+  alternative_scenarios: string | null;
+  expected_outcomes: string | null;
+  prediction: { id: string; statement: string; confidence: number; target_period: string } | null;
+  evidence: { id: string; entity_name: string; period: string; snippet: string | null }[];
 };
 
 export type Overview = {
@@ -120,6 +130,7 @@ export const api = {
       }[];
     }>("/predictions/accuracy"),
   recommendations: () => safeGet<{ items: Recommendation[] }>("/recommendations?limit=40"),
+  recommendation: (id: string) => safeGet<RecommendationDetail>(`/recommendations/${id}`),
   reports: () => safeGet<{ items: ReportSummary[] }>("/reports?limit=25"),
   report: (id: string) => safeGet<ReportDetail>(`/reports/${id}`),
 };

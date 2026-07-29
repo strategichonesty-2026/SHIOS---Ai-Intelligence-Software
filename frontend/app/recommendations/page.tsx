@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api, type Recommendation } from "@/lib/api";
 import { titleCase } from "@/lib/format";
 import { Card, ConfidenceBar, Empty, EvidenceLedger, Eyebrow } from "@/components/ui";
@@ -54,6 +55,12 @@ export default async function RecommendationsPage() {
                   >
                     {item.status.replace("_", " ")}
                   </span>
+                  <Link
+                    href={`/recommendations/${item.id}`}
+                    className="font-mono text-xs text-proof hover:underline"
+                  >
+                    {item.evidence_count} source{item.evidence_count !== 1 ? "s" : ""} →
+                  </Link>
                 </div>
               </li>
             ))}
