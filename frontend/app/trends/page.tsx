@@ -58,7 +58,7 @@ export default async function TrendsPage({
                 <Sparkline values={seriesByName.get(trend.entity_name) ?? []} />
               </td>
               <td className="py-3 pr-4 font-mono tabular-nums">
-                {trend.value.toFixed(0)}
+                {trend.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                 <span className="ml-1 text-xs text-muted font-sans">mentions</span>
               </td>
               <td className="py-3 pr-4">
