@@ -57,9 +57,13 @@ export default async function ForecastDetailPage({ params }: { params: { id: str
         <Card eyebrow="What was claimed" title="The forecast">
           <dl className="space-y-2 text-sm">
             <Row k="Target period" v={weekToDateRange(detail.target_period)} />
-            <Row k="Predicted value" v={detail.predicted_value.toFixed(1)} />
-            <Row k="Direction" v={detail.predicted_direction} />
-            <Row k="Method" v={detail.method} />
+            <Row k="Predicted mentions" v={`${detail.predicted_value.toFixed(0)} job postings`} />
+            <Row k="Direction" v={
+              detail.predicted_direction === "up" ? "↑ Rising" :
+              detail.predicted_direction === "down" ? "↓ Falling" :
+              "→ Roughly flat"
+            } />
+            <Row k="Method" v="Linear trend fit with confidence interval" />
             <Row k="Review by" v={shortDate(detail.review_date)} />
             <Row k="Expires" v={shortDate(detail.expiration_date)} />
           </dl>
@@ -75,12 +79,12 @@ export default async function ForecastDetailPage({ params }: { params: { id: str
           {detail.result ? (
             <>
               <dl className="space-y-2 text-sm">
-                <Row k="Actual value" v={detail.result.actual_value.toFixed(1)} />
-                <Row k="Deviation" v={detail.result.deviation.toFixed(1)} />
+                <Row k="Actual mentions" v={`${detail.result.actual_value.toFixed(0)} job postings`} />
+                <Row k="Off by" v={`${Math.abs(detail.result.deviation).toFixed(0)} postings`} />
                 <Row k="Accuracy" v={percent(detail.result.accuracy_score)} />
                 <Row
                   k="Direction"
-                  v={detail.result.direction_correct ? "called correctly" : "missed"}
+                  v={detail.result.direction_correct ? "✓ Called correctly" : "✗ Missed"}
                 />
               </dl>
               <p className="mt-4 text-sm text-muted">{detail.result.notes}</p>
@@ -99,8 +103,8 @@ export default async function ForecastDetailPage({ params }: { params: { id: str
           <Sparkline values={detail.series.map((p) => p.value)} width={520} height={60} />
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-muted">
             {detail.series.map((p) => (
-                <span key={p.period}>
-                {weekToDateRange(p.period)}: {p.value.toFixed(0)}
+              <span key={p.period}>
+                {weekToDateRange(p.period)}: {p.value.toFixed(0)} mentions
               </span>
             ))}
           </div>
