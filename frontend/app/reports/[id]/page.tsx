@@ -127,8 +127,10 @@ export default async function ReportPage({ params }: { params: { id: string } })
         </Eyebrow>
       </div>
 
-      <div className="mt-4 rounded-card border border-line bg-surface p-6">
-        {renderMarkdown(humanizeStatement(report.body_markdown))}
+      <div className="mt-4 rounded-card border border-line bg-surface p-4 sm:p-6">
+        <div className="prose-mobile">
+          {renderMarkdown(humanizeStatement(report.body_markdown))}
+        </div>
       </div>
 
       {report.payload?.limitations && (
