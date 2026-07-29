@@ -65,35 +65,43 @@ class RuleBasedProvider(LLMProvider):
         periods = int(context.get("periods_observed", 0))
         horizon = context.get("horizon", "4w")
         verb = _AUDIENCE_VERB.get(audience, "Consider")
-        movement = "rising" if direction == "up" else "falling" if direction == "down" else "steady"
+
+        # Fix: only mention % change if it's meaningful; flat is flat not "rising 0%"
+        if direction == "up" and abs(delta_pct) > 0:
+            trend_phrase = f"up {abs(delta_pct):.0f}% over the last {periods} weeks"
+        elif direction == "down" and abs(delta_pct) > 0:
+            trend_phrase = f"down {abs(delta_pct):.0f}% over the last {periods} weeks"
+        else:
+            trend_phrase = f"holding steady over the last {periods} weeks"
 
         text = (
-            f"{verb} capability in {entity} ({entity_type}). Demand is {movement} "
-            f"{abs(delta_pct):.0f}% across the last {periods} observed periods, and the "
-            f"{horizon} forecast holds that direction."
+            f"{verb} skills in {entity}. "
+            f"Job postings mentioning {entity} are {trend_phrase}, "
+            f"and the next {horizon} forecast points the same way."
         )
         rationale = (
-            f"Derived from {periods} consecutive {context.get('metric', 'job_postings_count')} "
-            f"observations for {entity}. Direction is {direction}; the recommendation inherits the "
-            f"forecast confidence rather than asserting certainty."
+            f"Based on {periods} weeks of job posting data for {entity}. "
+            f"The system tracks mentions per week and fits a straight-line forecast — "
+            f"no guesswork, just counts. This recommendation carries the forecast's own "
+            f"confidence level, not a separate claim."
         )
         risks = [
-            "Signal is drawn from posting volume, which lags actual hiring by weeks.",
-            "Source mix can shift; a single high-volume source can distort a period.",
+            "Job postings lag actual hiring by a few weeks — the market may have already shifted.",
+            "This data comes from a limited set of sources. A big job board we don't read could tell a different story.",
         ]
         if periods < 4:
-            risks.append("Fewer than four observed periods — treat as provisional.")
+            risks.append("We've only tracked this signal for a short time — treat it as early indication, not a firm trend.")
         alternatives = [
-            f"If demand for {entity} plateaus, the effort still transfers to adjacent work.",
-            "If demand reverses, revisit at the next review date before further investment.",
+            f"If demand for {entity} levels off, the skills you build will still transfer to related areas.",
+            "If the trend reverses at the next review date, revisit before investing further.",
         ]
         outcomes = {
-            "individual": [f"Credible, evidenced claim to {entity} within one quarter."],
-            "manager": [f"Team coverage for {entity} without emergency hiring."],
-            "executive": [f"Budget aligned to a measured demand curve for {entity}."],
-            "investor": [f"Earlier read on vendors positioned around {entity}."],
-            "student": [f"Coursework and projects aimed at {entity} while demand is rising."],
-        }.get(audience, [f"Better-informed decisions about {entity}."])
+            "individual": [f"A credible, evidenced reason to prioritise {entity} in your next quarter."],
+            "manager": [f"Team coverage for {entity} without waiting for an emergency."],
+            "executive": [f"Budget aligned to a measured demand signal, not a hunch."],
+            "investor": [f"An earlier read on which vendors are positioned around {entity}."],
+            "student": [f"Coursework and projects aimed at {entity} while demand is moving in your favour."],
+        }.get(audience, [f"A more informed decision about {entity}."])
 
         return {
             "recommendation_text": text,
