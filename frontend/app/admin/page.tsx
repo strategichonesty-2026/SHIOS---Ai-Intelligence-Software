@@ -2,9 +2,6 @@
 
 import { useState } from "react";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1";
-
 export default function AdminPage() {
   const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [log, setLog] = useState<string>("");
@@ -13,10 +10,8 @@ export default function AdminPage() {
     setStatus("running");
     setLog("Triggering collection loop...");
     try {
-      const res = await fetch(`${API_BASE}/runs/pipeline`, {
+      const res = await fetch("/api/run", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "full", background: true, limit: 300 }),
       });
       if (!res.ok) {
         const text = await res.text();
