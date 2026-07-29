@@ -57,7 +57,10 @@ export default async function TrendsPage({
               <td className="py-3 pr-4">
                 <Sparkline values={seriesByName.get(trend.entity_name) ?? []} />
               </td>
-              <td className="py-3 pr-4 font-mono tabular-nums">{trend.value.toFixed(0)}</td>
+              <td className="py-3 pr-4 font-mono tabular-nums">
+                {trend.value.toFixed(0)}
+                <span className="ml-1 text-xs text-muted font-sans">mentions</span>
+              </td>
               <td className="py-3 pr-4">
                 <DirectionTag direction={trend.direction} delta={trend.delta} />
                 <span className="ml-2 font-mono text-xs text-muted tabular-nums">

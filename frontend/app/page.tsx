@@ -67,7 +67,7 @@ export default async function OverviewPage() {
           <Stat
             label="Evidence base →"
             value={counts.documents.toLocaleString()}
-            note={`${counts.tracked_entities} entities tracked`}
+            note={`job postings analyzed · ${counts.tracked_entities} entities tracked`}
           />
         </Link>
       </div>
@@ -113,7 +113,10 @@ function MoverTable({ movers, empty }: { movers: Trend[]; empty: string }) {
             <span className="font-medium">{trend.entity_name}</span>
             <span className="ml-2 font-mono text-xs text-muted">{trend.entity_type}</span>
           </td>
-          <td className="py-2 pr-4 font-mono tabular-nums">{trend.value.toFixed(0)}</td>
+          <td className="py-2 pr-4 font-mono tabular-nums">
+            {trend.value.toFixed(0)}
+            <span className="ml-1 text-xs text-muted font-sans">mentions</span>
+          </td>
           <td className="py-2 pr-4">
             <DirectionTag direction={trend.direction} delta={trend.delta} />
             <span className="ml-2 font-mono text-xs text-muted tabular-nums">
