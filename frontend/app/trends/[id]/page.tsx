@@ -39,9 +39,8 @@ export default async function TrendEvidencePage({ params }: { params: { id: stri
           <ul className="space-y-4">
             {data.evidence.map((e) => (
               <li key={e.id} className="border-b border-line/60 pb-4 last:border-0 last:pb-0">
-                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs text-proof uppercase">{e.source}</span>
-                  <span className="font-mono text-xs text-muted">{e.id.slice(0, 8)}</span>
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="font-mono text-xs text-proof uppercase">{e.source.replace(/_/g, " ")}</span>
                 </div>
                 {e.snippet ? (
                   <p className="mt-1 text-sm text-muted leading-relaxed">{e.snippet}</p>

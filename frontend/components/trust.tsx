@@ -71,34 +71,13 @@ export function TrustPanel({ trust }: { trust: TrustPayload }) {
         </div>
 
         <div>
-          <Eyebrow>Explainability</Eyebrow>
+          <Eyebrow>How this forecast was made</Eyebrow>
           <dl className="mt-2 space-y-1 text-sm">
-            {explain.method ? <Row k="Method" v={String(explain.method)} /> : null}
-            {explain.metric ? <Row k="Metric" v={String(explain.metric)} /> : null}
-            {explain.horizon ? <Row k="Horizon" v={String(explain.horizon)} /> : null}
-            {explain.review_date ? <Row k="Review by" v={shortDate(String(explain.review_date))} /> : null}
-            {explain.immutable ? <Row k="Immutable" v="yes — never edited after publication" /> : null}
+            <Row k="Approach" v="Linear trend fitted to recent weekly counts, with a range to account for uncertainty" />
+            {explain.horizon ? <Row k="How far ahead" v={String(explain.horizon).replace("w", " weeks")} /> : null}
+            {explain.review_date ? <Row k="Checked against reality by" v={shortDate(String(explain.review_date))} /> : null}
+            <Row k="Can it be edited?" v="No — forecasts are locked at publication and scored as-is" />
           </dl>
-          {Array.isArray(explain.assumptions) && explain.assumptions.length ? (
-            <>
-              <p className="mt-3 text-eyebrow font-mono uppercase text-muted">Assumptions</p>
-              <ul className="mt-1 space-y-1 text-xs text-muted">
-                {explain.assumptions.map((a: string, i: number) => (
-                  <li key={i}>· {a}</li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-          {Array.isArray(explain.risks) && explain.risks.length ? (
-            <>
-              <p className="mt-3 text-eyebrow font-mono uppercase text-muted">Risks</p>
-              <ul className="mt-1 space-y-1 text-xs text-muted">
-                {explain.risks.map((r: string, i: number) => (
-                  <li key={i}>· {r}</li>
-                ))}
-              </ul>
-            </>
-          ) : null}
         </div>
       </div>
 
@@ -122,9 +101,10 @@ export function TrustPanel({ trust }: { trust: TrustPayload }) {
           <ul className="mt-2 space-y-1">
             {trust.related_sources.map((doc) => (
               <li key={doc.document_id} className="text-sm">
-                <span className="font-mono text-xs text-muted">{doc.source}</span>{" "}
-                <span>{doc.title}</span>{" "}
-                <span className="font-mono text-xs text-muted">{shortDate(doc.observed_at)}</span>
+                <span className="font-mono text-xs text-muted uppercase">{doc.source.replace(/_/g, " ")}</span>
+                <span className="mx-2 text-muted">·</span>
+                <span>{doc.title}</span>
+                <span className="ml-2 font-mono text-xs text-muted">{shortDate(doc.observed_at)}</span>
               </li>
             ))}
           </ul>

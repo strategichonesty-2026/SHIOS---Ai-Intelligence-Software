@@ -27,27 +27,17 @@ export default async function RecommendationPage({ params }: { params: { id: str
         </div>
       </div>
 
-      {/* Rationale / risks / outcomes if present */}
-      {(rec.rationale || rec.risks || rec.expected_outcomes) && (
-        <Card eyebrow="Reasoning">
-          {rec.rationale && (
-            <div className="mb-4">
-              <p className="font-mono text-xs uppercase text-muted mb-1">Rationale</p>
-              <p className="text-sm leading-relaxed">{rec.rationale}</p>
-            </div>
-          )}
-          {rec.expected_outcomes && (
-            <div className="mb-4">
-              <p className="font-mono text-xs uppercase text-muted mb-1">Expected outcomes</p>
-              <p className="text-sm leading-relaxed">{rec.expected_outcomes}</p>
-            </div>
-          )}
-          {rec.risks && (
-            <div>
-              <p className="font-mono text-xs uppercase text-muted mb-1">Risks</p>
-              <p className="text-sm leading-relaxed text-provisional">{rec.risks}</p>
-            </div>
-          )}
+      {/* Reasoning — plain English only */}
+      {rec.expected_outcomes && (
+        <Card eyebrow="Why this matters">
+          <p className="text-sm leading-relaxed">{rec.expected_outcomes}</p>
+        </Card>
+      )}
+
+      {/* Caveats — only show if there are real risks worth surfacing */}
+      {rec.risks && (
+        <Card eyebrow="Keep in mind">
+          <p className="text-sm leading-relaxed text-muted">{rec.risks}</p>
         </Card>
       )}
 
