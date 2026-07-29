@@ -57,3 +57,14 @@ def recent_periods(count: int, anchor: date | None = None) -> list[str]:
 def period_index(period: str) -> int:
     """Monotonic integer index for regression maths."""
     return period_start_date(period).toordinal() // 7
+
+
+def week_label(period: str) -> str:
+    """Convert '2026-W20' → 'May 12–18, 2026'. Returns original string if not an ISO week."""
+    if "-W" not in period:
+        return period
+    monday = period_start_date(period)
+    sunday = monday + timedelta(days=6)
+    if monday.month == sunday.month:
+        return f"{monday.strftime('%b')} {monday.day}–{sunday.day}, {sunday.year}"
+    return f"{monday.strftime('%b %-d')}–{sunday.strftime('%b %-d')}, {sunday.year}"

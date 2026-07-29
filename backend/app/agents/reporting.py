@@ -9,8 +9,7 @@ including the misses.
 from __future__ import annotations
 
 import math
-import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -32,22 +31,8 @@ from app.models.tables import (
     Report,
     Trend,
 )
+from app.services.periods import week_label as _week_to_date_range
 from app.services.stats import mean
-
-def _week_to_date_range(period: str) -> str:
-    """Convert '2026-W20' → 'May 12–18, 2026'. Returns original string if not an ISO week."""
-    m = re.match(r"^(\d{4})-W(\d{2})$", period)
-    if not m:
-        return period
-    year, week = int(m.group(1)), int(m.group(2))
-    # Monday of ISO week 1 = Monday on or before Jan 4
-    jan4 = datetime(year, 1, 4)
-    w1_monday = jan4 - timedelta(days=(jan4.weekday()))
-    monday = w1_monday + timedelta(weeks=week - 1)
-    sunday = monday + timedelta(days=6)
-    if monday.month == sunday.month:
-        return f"{monday.strftime('%b')} {monday.day}–{sunday.day}, {sunday.year}"
-    return f"{monday.strftime('%b %-d')}–{sunday.strftime('%b %-d')}, {sunday.year}"
 
 
 REPORT_TYPES = [

@@ -30,7 +30,7 @@ from app.events.types import EventName
 from app.governance.rules import GovernanceError, enforce, evaluate_prediction
 from app.models.tables import Prediction, Trend
 from app.services.calibration import calibration_multiplier
-from app.services.periods import period_index, period_start_date, shift_period
+from app.services.periods import period_index, period_start_date, shift_period, week_label
 from app.services.stats import clamp, direction_of, linear_fit, prediction_interval_80, stdev
 
 log = logging.getLogger("shios.agents.prediction")
@@ -127,12 +127,25 @@ class PredictionAgent(Agent):
             review_date = period_start_date(target_period) + timedelta(days=6)
             expiration_date = review_date + timedelta(days=7)
 
+            # Plain-English forecast statement (phase 2c)
+            if entity_type == "role":
+                subject = f"job postings for {entity_name} roles"
+            else:
+                subject = f"job postings mentioning {entity_name}"
+
+            dir_phrase = (
+                f"up from {last_value:.0f}"
+                if direction == "up"
+                else f"down from {last_value:.0f}"
+                if direction == "down"
+                else f"roughly flat from {last_value:.0f}"
+            )
+
             statement = (
-                f"{metric.replace('_', ' ')} for {entity_type} '{entity_name}' is forecast at "
-                f"{predicted_value:.0f} in {target_period}, within {lower_bound:.0f}-"
-                f"{upper_bound:.0f} at {INTERVAL_CONFIDENCE:.0%} confidence "
-                f"({'up' if direction == 'up' else 'down' if direction == 'down' else 'flat'} from "
-                f"{last_value:.0f} in {anchor_period})."
+                f"Around {predicted_value:.0f} {subject} are expected the week of "
+                f"{week_label(target_period)} (likely range: {lower_bound:.0f}–{upper_bound:.0f}, "
+                f"{INTERVAL_CONFIDENCE:.0%} confidence) — {dir_phrase} the week of "
+                f"{week_label(anchor_period)}."
             )
 
             report = evaluate_prediction(
