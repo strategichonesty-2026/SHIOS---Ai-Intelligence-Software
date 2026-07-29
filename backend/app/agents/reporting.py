@@ -35,6 +35,22 @@ from app.services.periods import week_label as _week_to_date_range
 from app.services.stats import mean
 
 
+def _fmt_postings(value: float, entity_name: str = "", entity_type: str = "") -> str:
+    """Format a raw job-postings count with context: '172,500 job postings mentioning Snowflake'."""
+    count = f"{int(round(value)):,}"
+    if entity_type == "role":
+        label = f"job postings for {entity_name} roles" if entity_name else "job postings"
+    else:
+        label = f"job postings mentioning {entity_name}" if entity_name else "job postings"
+    return f"{count} {label}"
+
+
+def _fmt_delta(delta: float) -> str:
+    """Format a delta with sign and comma: '+1,200' or '−340'."""
+    sign = "+" if delta >= 0 else "−"
+    return f"{sign}{abs(int(round(delta))):,}"
+
+
 REPORT_TYPES = [
     "weekly_report",
     "monthly_report",
@@ -287,11 +303,11 @@ class ReportingAgent(Agent):
     # -- shared fragments ---------------------------------------------------
 
     def _movement_table(self, snapshot: dict[str, Any]) -> str:
-        lines = ["| Signal | Type | This week | Change | Direction |", "|---|---|---|---|---|"]
+        lines = ["| Signal | Type | Job postings this week | Change | Direction |", "|---|---|---|---|---|"]
         for trend in snapshot["movers"]:
             lines.append(
-                f"| {trend.entity_name} | {trend.entity_type} | {trend.value:.0f} | "
-                f"{trend.delta:+.0f} ({trend.delta_pct:+.0f}%) | {trend.direction} |"
+                f"| {trend.entity_name} | {trend.entity_type} | {int(round(trend.value)):,} | "
+                f"{_fmt_delta(trend.delta)} ({trend.delta_pct:+.0f}%) | {trend.direction} |"
             )
         return "\n".join(lines)
 
@@ -406,7 +422,7 @@ Here is the count.
 {self._movement_table(snapshot)}
 
 Over the window {snapshot['first_period_fmt']} to {snapshot['latest_period_fmt']}, mentions of
-**{top.entity_name}** moved {top.delta:+.0f} week over week, to {top.value:.0f}.
+**{top.entity_name}** moved {_fmt_delta(top.delta)} week over week, to {_fmt_postings(top.value, top.entity_name, top.entity_type)}.
 
 {self._accuracy_line(snapshot)}
 
@@ -431,7 +447,7 @@ does not know your situation — only the market's.
             else "No scored forecasts yet — treat as unproven."
         )
         body = (
-            f"{top.entity_name} mentions: {top.value:.0f} this week ({top.delta:+.0f}).\n"
+            f"{_fmt_postings(top.value, top.entity_name, top.entity_type)} this week ({_fmt_delta(top.delta)}).\n"
             f"Window: {snapshot['first_period_fmt']}–{snapshot['latest_period_fmt']}.\n"
             f"{accuracy_note}\n"
             f"Counts first, conclusions second."
@@ -479,7 +495,7 @@ turn. Those limits are in the system's own records, not just this post.
             if snapshot["accuracy"] is not None
             else "No forecast has expired yet, so there is no accuracy to show. Unproven."
         )
-        body = f"""{top.entity_name} mentions moved {top.delta:+.0f} this week, to {top.value:.0f}.
+        body = f"""{_fmt_postings(top.value, top.entity_name, top.entity_type)} this week ({_fmt_delta(top.delta)}).
 
 Window: {snapshot['first_period_fmt']} to {snapshot['latest_period_fmt']}. Source: configured job feeds only.
 
