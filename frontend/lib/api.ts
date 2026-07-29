@@ -129,6 +129,13 @@ export const api = {
         multiplier: number;
       }[];
     }>("/predictions/accuracy"),
+  trendEvidence: (id: string) =>
+    safeGet<{
+      trend_id: string;
+      entity_name: string;
+      period: string;
+      evidence: { id: string; snippet: string | null; source: string; normalized_document_id: string }[];
+    }>(`/trends/${id}/evidence`),
   recommendations: () => safeGet<{ items: Recommendation[] }>("/recommendations?limit=40"),
   recommendation: (id: string) => safeGet<RecommendationDetail>(`/recommendations/${id}`),
   reports: () => safeGet<{ items: ReportSummary[] }>("/reports?limit=25"),

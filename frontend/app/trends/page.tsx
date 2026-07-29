@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { api, type Trend } from "@/lib/api";
 import { signed, weekToDateRange } from "@/lib/format";
 import { Card, DirectionTag, Empty, EvidenceLedger, Eyebrow, Sparkline, Table } from "@/components/ui";
@@ -68,7 +69,14 @@ export default async function TrendsPage({
                 </span>
               </td>
               <td className="py-3">
-                <EvidenceLedger count={trend.evidence_count} max={16} />
+                <Link
+                  href={`/trends/${trend.id}`}
+                  className="group flex items-center gap-1 hover:opacity-80 transition-opacity"
+                  title={`View ${trend.evidence_count} source documents`}
+                >
+                  <EvidenceLedger count={trend.evidence_count} max={16} />
+                  <span className="font-mono text-xs text-proof opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                </Link>
               </td>
             </tr>
           ))}
