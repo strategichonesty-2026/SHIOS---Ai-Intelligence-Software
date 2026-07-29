@@ -5,7 +5,7 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:8000/api/v1";
 
-const API_KEY = process.env.SHIOS_API_KEY ?? "";
+const API_KEY = process.env.SHIOS_API_KEY ?? process.env.API_KEY ?? "";
 
 export async function POST() {
   try {
