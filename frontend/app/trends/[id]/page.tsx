@@ -41,9 +41,23 @@ export default async function TrendEvidencePage({ params }: { params: { id: stri
               <li key={e.id} className="border-b border-line/60 pb-4 last:border-0 last:pb-0">
                 <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="font-mono text-xs text-proof uppercase">{e.source.replace(/_/g, " ")}</span>
+                  {e.source === "github" && e.snippet?.includes("/") ? (
+                    <a
+                      href={`https://github.com/${e.snippet.split("\n")[0].trim()}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-xs text-proof hover:underline"
+                    >
+                      {e.snippet.split("\n")[0].trim()} ↗
+                    </a>
+                  ) : null}
                 </div>
                 {e.snippet ? (
-                  <p className="mt-1 text-sm text-muted leading-relaxed">{e.snippet}</p>
+                  <p className="mt-1 text-sm text-muted leading-relaxed line-clamp-2">
+                    {e.source === "github"
+                      ? e.snippet.split("\n").slice(1).join(" ").trim()
+                      : e.snippet}
+                  </p>
                 ) : (
                   <p className="mt-1 text-xs text-muted italic">No snippet available.</p>
                 )}

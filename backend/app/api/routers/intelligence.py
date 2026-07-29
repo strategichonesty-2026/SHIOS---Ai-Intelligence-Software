@@ -74,6 +74,14 @@ SOURCE_CATALOGUE: dict[str, dict[str, Any]] = {
         "synthetic": False,
         "primary": True,
     },
+    "remoteok": {
+        "label": "RemoteOK job postings",
+        "category": "Job Postings",
+        "reliability": "high",
+        "basis": "Real remote job postings from RemoteOK.com public API. Updated on each collection run.",
+        "synthetic": False,
+        "primary": True,
+    },
 }
 
 DOC_TYPE_CATEGORY = {

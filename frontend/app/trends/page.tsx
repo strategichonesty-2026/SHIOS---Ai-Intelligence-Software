@@ -20,6 +20,11 @@ export default async function TrendsPage({
   }
 
   const seriesByName = new Map((explorer?.series ?? []).map((series) => [series.name, series.values]));
+  // Only show trends that have enough history to be meaningful (2+ data points)
+  const itemsWithHistory = latest.items.filter((trend: Trend) => {
+    const values = seriesByName.get(trend.entity_name) ?? [];
+    return values.length >= 2;
+  });
 
   return (
     <div className="space-y-8">
@@ -51,7 +56,7 @@ export default async function TrendsPage({
 
       <Card eyebrow={`${explorer?.periods.length ?? 0} weeks observed`} title="Series">
         <Table head={["Signal", "History", "Latest", "Week change", "Evidence"]}>
-          {latest.items.map((trend: Trend) => (
+          {itemsWithHistory.map((trend: Trend) => (
             <tr key={trend.id} className="border-b border-line/60 last:border-0">
               <td className="py-3 pr-4 font-medium">{trend.entity_name}</td>
               <td className="py-3 pr-4">
