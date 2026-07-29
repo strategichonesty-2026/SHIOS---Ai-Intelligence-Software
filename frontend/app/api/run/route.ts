@@ -5,11 +5,16 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
   "http://localhost:8000/api/v1";
 
+const API_KEY = process.env.SHIOS_API_KEY ?? "";
+
 export async function POST() {
   try {
     const res = await fetch(`${BASE_URL}/runs/pipeline`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(API_KEY ? { "x-api-key": API_KEY } : {}),
+      },
       body: JSON.stringify({ mode: "full", background: true, limit: 300 }),
       cache: "no-store",
     });
