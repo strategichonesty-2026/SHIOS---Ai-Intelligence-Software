@@ -131,6 +131,17 @@ export default async function ReportPage({ params }: { params: { id: string } })
         {renderMarkdown(humanizeStatement(report.body_markdown))}
       </div>
 
+      {report.payload?.limitations && (
+        <details className="mt-4 rounded-card border border-line bg-surface/50">
+          <summary className="cursor-pointer px-5 py-3 font-mono text-xs text-muted hover:text-proof select-none">
+            What this does not claim ▸
+          </summary>
+          <p className="px-5 pb-4 text-sm text-muted leading-relaxed">
+            {report.payload.limitations}
+          </p>
+        </details>
+      )}
+
       {report.report_type === "executive_brief" && stories.length > 0 && (
         <div className="mt-6 space-y-4">
           <Eyebrow>Stories</Eyebrow>

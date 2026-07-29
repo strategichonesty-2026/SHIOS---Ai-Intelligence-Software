@@ -458,6 +458,12 @@ does not know your situation — only the market's.
         top = snapshot["risers"][0] if snapshot["risers"] else snapshot["movers"][0]
         title = f"{top.entity_name} is moving. Here is the evidence, and here is what it is not."
         subtitle = f"Weekly read on {snapshot['latest_period_fmt']}, with the misses included"
+        limitations = (
+            "I cannot see hiring outcomes, only postings. I cannot see sources I have not "
+            "connected. And a four-week linear forecast cannot see an inflection coming — by "
+            "construction, it will miss the turn. Those limits are in the system's own records, "
+            "not just this post."
+        )
         body = f"""# {title}
 
 *{subtitle}*
@@ -477,16 +483,11 @@ grades its own forecasts. This is the {snapshot['latest_period_fmt']} read.
 ## What I would actually do
 {self._recommendation_lines(snapshot, audience="individual")}
 
-## What I will not claim
-I cannot see hiring outcomes, only postings. I cannot see sources I have not connected. And a
-four-week linear forecast cannot see an inflection coming — by construction, it will miss the
-turn. Those limits are in the system's own records, not just this post.
-
 **Recommended images:** the movement table as a simple bar chart; the accuracy record over time.
 
 **Call to action:** if you track a signal that contradicts this, I would rather see it than not.
 """
-        return title, subtitle, body, {}, snapshot["evidence_ids"]
+        return title, subtitle, body, {"limitations": limitations}, snapshot["evidence_ids"]
 
     def _linkedin_post(self, snapshot: dict[str, Any]) -> tuple[str, str, str, dict, list[str]]:
         top = snapshot["risers"][0] if snapshot["risers"] else snapshot["movers"][0]
