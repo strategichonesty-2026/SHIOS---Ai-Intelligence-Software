@@ -4,7 +4,7 @@ echo "DATABASE_URL set: $([ -n "$DATABASE_URL" ] && echo yes || echo NO)"
 echo "ENVIRONMENT: ${ENVIRONMENT:-development}"
 echo "Running migrations..."
 alembic upgrade head || echo "Migration failed - continuing anyway"
-if [ "${BOOTSTRAP_ON_START}" = "true" ]; then
+if [ "${BOOTSTRAP_ON_START}" = "true" ] || [ "${BOOTSTRAP_ON_START}" = "1" ]; then
   echo "Bootstrapping..."
   python -m app.cli run --mode full || echo "Bootstrap failed; API will still start."
 fi
