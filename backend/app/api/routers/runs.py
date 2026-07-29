@@ -4,7 +4,10 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Qu
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from sqlalchemy import delete as sql_delete
+
 from app.agents import AGENTS
+from app.models.tables import Evidence, Job, NormalizedDocument, RawDocument
 from app.db import get_session, session_scope
 from app.models.tables import AgentRun, EventLog
 from app.orchestrator.orchestrator import run_agent, run_full_loop, run_mvp_loop
@@ -48,6 +51,18 @@ def trigger_agent(
         raise HTTPException(status_code=404, detail=f"Unknown agent. Known: {sorted(AGENTS)}")
     with session_scope() as scoped:
         return {"agent": name, "result": run_agent(scoped, name, **payload)}
+
+
+@router.delete("/synthetic")
+def purge_synthetic(session: Session = Depends(get_session)) -> dict:
+    """Remove all sample_jobs synthetic data from the database."""
+    # Delete raw documents from sample_jobs source — cascades to normalized + evidence
+    result = session.execute(
+        sql_delete(RawDocument).where(RawDocument.source == "sample_jobs")
+    )
+    deleted = result.rowcount
+    session.commit()
+    return {"status": "ok", "deleted_raw_documents": deleted}
 
 
 @router.get("")
