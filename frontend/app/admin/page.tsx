@@ -8,17 +8,55 @@ export default function AdminPage() {
   const [purgeStatus, setPurgeStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [purgeLog, setPurgeLog] = useState<string>("");
 
+  async function pollUntilDone() {
+    const start = Date.now();
+    const maxWait = 5 * 60 * 1000; // 5 minutes
+    while (Date.now() - start < maxWait) {
+      await new Promise((r) => setTimeout(r, 8000)); // check every 8 seconds
+      try {
+        const res = await fetch("/api/run-status");
+        if (!res.ok) continue;
+        const data = await res.json();
+        const elapsed = Math.round((Date.now() - start) / 1000);
+        setRunLog(
+          `Loop running...\n\nJobs collected: ${data.jobs ?? "—"}\nDocuments: ${data.documents ?? "—"}\nElapsed: ${elapsed}s\n\nPage will update when complete.`
+        );
+        if (data.done) {
+          setRunStatus("done");
+          setRunLog(
+            `✓ Complete!\n\nJobs collected: ${data.jobs ?? "—"}\nDocuments: ${data.documents ?? "—"}\nTrends computed: ${data.trends ?? "—"}\n\nRefresh Jobs or Trends page to see real data.`
+          );
+          // Browser notification
+          if (Notification.permission === "granted") {
+            new Notification("SHIOS — Collection complete", {
+              body: `Collected ${data.jobs ?? "?"} jobs. Refresh the Jobs or Trends page.`,
+            });
+          }
+          return;
+        }
+      } catch {
+        continue;
+      }
+    }
+    setRunStatus("done");
+    setRunLog("Loop is taking longer than expected. Check the Jobs or Trends page manually.");
+  }
+
   async function runLoop() {
     setRunStatus("running");
     setRunLog("Triggering collection loop...");
+
+    // Request notification permission
+    if (Notification.permission === "default") {
+      await Notification.requestPermission();
+    }
+
     try {
       const res = await fetch("/api/run", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      setRunStatus("done");
-      setRunLog(
-        `Loop accepted.\n\nStatus: ${data.status}\nMode: ${data.mode}\n\nCollecting real job postings from RemoteOK + GitHub + RSS. Takes 1–3 minutes.\n\nRefresh Jobs or Trends after a minute.`
-      );
+      setRunLog("Loop accepted. Waiting for results...");
+      pollUntilDone();
     } catch (err: any) {
       setRunStatus("error");
       setRunLog(`Error: ${err.message}`);
@@ -33,9 +71,7 @@ export default function AdminPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setPurgeStatus("done");
-      setPurgeLog(
-        `Done. Removed ${data.deleted_raw_documents ?? 0} synthetic records.\n\nRefresh the Jobs page — the demo banner should be gone.`
-      );
+      setPurgeLog(`Done. Removed ${data.deleted_raw_documents ?? 0} synthetic records.`);
     } catch (err: any) {
       setPurgeStatus("error");
       setPurgeLog(`Error: ${err.message}`);
@@ -59,8 +95,7 @@ export default function AdminPage() {
         <div>
           <p className="font-mono text-xs uppercase text-provisional">Step 1 — Remove demo data</p>
           <p className="mt-1 text-sm text-muted">
-            Deletes all synthetic sample_jobs records from the database. Run this once
-            before collecting real data.
+            Deletes all synthetic sample_jobs records. Run this once before collecting real data.
           </p>
         </div>
         <button
@@ -77,7 +112,7 @@ export default function AdminPage() {
           {purgeStatus === "running" ? "Removing..." : purgeStatus === "done" ? "✓ Done" : "Remove demo data →"}
         </button>
         {purgeLog && (
-          <pre className="mt-2 rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
+          <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
             {purgeLog}
           </pre>
         )}
@@ -88,8 +123,9 @@ export default function AdminPage() {
         <div>
           <p className="font-mono text-xs uppercase text-muted">Step 2 — Collect real data</p>
           <p className="mt-1 text-sm text-muted">
-            Collects from RemoteOK + GitHub + RSS, extracts entities, computes
-            trends, publishes forecasts and recommendations.
+            Collects from RemoteOK + GitHub + RSS, extracts entities, computes trends,
+            publishes forecasts and recommendations. You'll get a browser notification
+            when it's done — no need to watch this page.
           </p>
         </div>
         <button
@@ -98,13 +134,15 @@ export default function AdminPage() {
           className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${
             runStatus === "running"
               ? "border-line text-muted cursor-not-allowed"
+              : runStatus === "done"
+              ? "border-proof text-proof"
               : "border-proof text-proof hover:bg-proofSoft"
           }`}
         >
-          {runStatus === "running" ? "Running..." : "Run collection loop now →"}
+          {runStatus === "running" ? "Running — check back in 2 min..." : runStatus === "done" ? "✓ Complete" : "Run collection loop now →"}
         </button>
         {runLog && (
-          <pre className="mt-2 rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
+          <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
             {runLog}
           </pre>
         )}
