@@ -109,6 +109,7 @@ class Job(Base, IdMixin, TimestampMixin):
     technologies: Mapped[list] = mapped_column(JSON, default=list)
     salary_min: Mapped[float | None] = mapped_column(Float, nullable=True)
     salary_max: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
 
 
 class KnowledgeRecord(Base, IdMixin, TimestampMixin):

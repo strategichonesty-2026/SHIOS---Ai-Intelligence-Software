@@ -317,7 +317,7 @@ def list_jobs(
                 "skills": job.skills or [],
                 "technologies": job.technologies or [],
                 "document_id": job.normalized_document_id,
-                "url": None,
+                "url": job.source_url,
             }
         )
 

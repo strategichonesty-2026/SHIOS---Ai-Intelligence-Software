@@ -140,6 +140,7 @@ class ExtractionAgent(Agent):
                 technologies=entities.get("technologies", []),
                 salary_min=entities.get("salary_min"),
                 salary_max=entities.get("salary_max"),
+                source_url=raw.doc_metadata.get("url"),
             )
         )
         session.flush()
