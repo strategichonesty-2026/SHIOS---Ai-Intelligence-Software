@@ -38,7 +38,7 @@ export default async function OverviewPage() {
         <p className="mt-3 max-w-2xl text-sm text-muted">{trackRecord}</p>
       </section>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Link href="/forecasts" className="block transition-colors hover:border-proof">
           <Stat
             label="Forecast accuracy →"
@@ -72,7 +72,7 @@ export default async function OverviewPage() {
         </Link>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card eyebrow="This week" title="Rising">
           <MoverTable movers={overview.risers} empty="Nothing rose this period." />
         </Card>

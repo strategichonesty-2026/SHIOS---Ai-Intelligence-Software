@@ -35,9 +35,9 @@ export function Stat({
   note?: string;
 }) {
   return (
-    <div className="rounded-card border border-line bg-surface px-4 py-3">
+    <div className="rounded-card border border-line bg-surface px-3 py-3 sm:px-4">
       <Eyebrow>{label}</Eyebrow>
-      <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">{value}</p>
+      <p className="mt-1 font-mono text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>
       {note ? <p className="mt-1 text-xs text-muted">{note}</p> : null}
     </div>
   );
@@ -130,12 +130,12 @@ export function Empty({ title, action }: { title: string; action: string }) {
 
 export function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
+    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      <table className="w-full min-w-[480px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left">
             {head.map((label) => (
-              <th key={label} className="pb-2 pr-4 text-eyebrow font-mono uppercase text-muted">
+              <th key={label} className="pb-2 pr-3 text-eyebrow font-mono text-xs uppercase text-muted sm:pr-4">
                 {label}
               </th>
             ))}

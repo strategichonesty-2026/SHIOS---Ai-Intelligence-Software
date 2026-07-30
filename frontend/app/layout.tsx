@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
 };
 
 const NAV = [
@@ -37,23 +38,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-5 py-8 sm:px-8">
-          <header className="mb-10 border-b border-line pb-6">
-            <div className="flex flex-wrap items-baseline justify-between gap-4">
-              <Link href="/" className="font-display text-2xl font-bold tracking-tight">
+        <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-5 sm:px-8 sm:py-8">
+          <header className="mb-6 border-b border-line pb-4 sm:mb-10 sm:pb-6">
+            <div className="flex items-center justify-between gap-3">
+              <Link href="/" className="font-display text-lg font-bold tracking-tight sm:text-2xl">
                 SHIOS
-                <span className="ml-3 font-body text-sm font-normal text-muted">
+                <span className="ml-2 font-body text-xs font-normal text-muted sm:ml-3 sm:text-sm">
                   Strategic Honesty Intelligence
                 </span>
               </Link>
-              <p className="font-mono text-xs text-muted">counts before conclusions</p>
+              <p className="hidden font-mono text-xs text-muted sm:block">counts before conclusions</p>
             </div>
-            <nav className="mt-4 -mx-1 flex overflow-x-auto pb-1 gap-x-1 sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:overflow-visible sm:pb-0">
+            {/* Mobile: horizontally scrollable pill nav */}
+            <nav className="mt-3 -mx-4 flex overflow-x-auto px-4 pb-1 gap-1 sm:mx-0 sm:mt-5 sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:overflow-visible sm:px-0 sm:pb-0">
               {NAV.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="shrink-0 px-1 text-eyebrow font-mono uppercase text-muted transition-colors hover:text-proof"
+                  className="shrink-0 rounded-full border border-line px-3 py-1.5 font-mono text-[10px] uppercase text-muted transition-colors hover:border-proof hover:text-proof active:bg-proofSoft sm:rounded-none sm:border-0 sm:px-0 sm:py-0 sm:text-eyebrow"
                 >
                   {item.label}
                 </Link>
@@ -61,7 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </nav>
           </header>
           <main className="flex-1">{children}</main>
-          <footer className="mt-16 border-t border-line pt-5 font-mono text-xs text-muted">
+          <footer className="mt-12 border-t border-line pt-4 font-mono text-xs text-muted sm:mt-16 sm:pt-5">
             Every figure here traces to a document the system collected. Where it does not know, it
             says so.
           </footer>

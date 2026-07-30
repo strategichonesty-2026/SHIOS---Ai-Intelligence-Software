@@ -72,3 +72,21 @@ body {
 .prose-mobile .overflow-x-auto {
   -webkit-overflow-scrolling: touch;
 }
+
+/* Mobile comfort improvements */
+@media (max-width: 640px) {
+  /* Larger touch targets for evidence ledger links */
+  a .ledger-tick {
+    height: 14px;
+  }
+
+  /* Card padding tighter on mobile */
+  .rounded-card {
+    border-radius: 8px;
+  }
+
+  /* Readable body text on small screens */
+  body {
+    font-size: 15px;
+  }
+}
