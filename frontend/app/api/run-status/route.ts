@@ -7,7 +7,7 @@ const BASE_URL =
 
 const API_KEY = process.env.SHIOS_API_KEY ?? process.env.API_KEY ?? "";
 
-const HEADERS = API_KEY ? { "x-api-key": API_KEY } : {};
+const HEADERS: Record<string, string> = API_KEY ? { "x-api-key": API_KEY } : {};
 
 export async function GET() {
   try {
