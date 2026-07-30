@@ -280,21 +280,104 @@ class GmailSource(Source):
                 for h in message["payload"].get("headers", [])
             }
             body = _extract_gmail_body(message["payload"])
-            items.append(
-                CollectedItem(
-                    external_id=ref["id"],
-                    content=f"{headers.get('subject', '')}\n\n{strip_html(body)}",
-                    doc_type="email",
-                    observed_at=datetime.fromtimestamp(
-                        int(message.get("internalDate", 0)) / 1000, tz=UTC
-                    ),
-                    metadata={
-                        "title": headers.get("subject", ""),
-                        "from": headers.get("from", ""),
-                    },
-                )
+            observed_at = datetime.fromtimestamp(
+                int(message.get("internalDate", 0)) / 1000, tz=UTC
             )
+            subject = headers.get("subject", "")
+            from_addr = headers.get("from", "")
+            clean_body = strip_html(body)
+
+            # Parse LinkedIn job alert emails into individual job items
+            if "jobalerts-noreply@linkedin.com" in from_addr:
+                job_items = _parse_linkedin_job_alert(
+                    ref["id"], subject, clean_body, observed_at
+                )
+                items.extend(job_items)
+            else:
+                items.append(
+                    CollectedItem(
+                        external_id=ref["id"],
+                        content=f"{subject}\n\n{clean_body}",
+                        doc_type="email",
+                        observed_at=observed_at,
+                        metadata={"title": subject, "from": from_addr},
+                    )
+                )
         return items
+
+
+def _parse_linkedin_job_alert(
+    email_id: str,
+    subject: str,
+    body: str,
+    observed_at,
+) -> list:
+    """Parse a LinkedIn job alert email into individual CollectedItem job records."""
+    import re
+    items = []
+    lines = [l.strip() for l in body.splitlines() if l.strip()]
+
+    # Extract role from subject: "Your job alert for Scrum Master"
+    role_match = re.search(r"job alert for (.+)", subject, re.IGNORECASE)
+    alert_role = role_match.group(1).strip() if role_match else ""
+
+    # LinkedIn email format: company name line, then job title line, then "company · location"
+    # Find job blocks by looking for "·" separator lines
+    i = 0
+    job_count = 0
+    while i < len(lines):
+        line = lines[i]
+        # Location line format: "Company · City, ST" or "Company · City, ST (On-site)"
+        if " · " in line and i > 0:
+            parts = line.split(" · ", 1)
+            company = parts[0].strip()
+            location_raw = parts[1].strip()
+            # Remove work type suffix
+            location = re.sub(r"\s*\((On-site|Remote|Hybrid)\)\s*$", "", location_raw).strip()
+            remote_type = "remote"
+            if "(On-site)" in location_raw:
+                remote_type = "onsite"
+            elif "(Hybrid)" in location_raw:
+                remote_type = "hybrid"
+
+            # Job title is the line before
+            title = lines[i - 1] if i > 0 else alert_role
+
+            # Salary is the next line if it matches $XXK-$XXXK
+            salary_min = None
+            salary_max = None
+            if i + 1 < len(lines):
+                sal_match = re.search(r"\$([0-9,]+)K?.*\$([0-9,]+)K?", lines[i + 1])
+                if sal_match:
+                    salary_min = float(sal_match.group(1).replace(",", "")) * 1000
+                    salary_max = float(sal_match.group(2).replace(",", "")) * 1000
+
+            content = f"{title} at {company}\nLocation: {location}\n"
+            if salary_min:
+                content += f"Salary: ${int(salary_min):,}–${int(salary_max):,}\n"
+            content += f"Role type: {alert_role}"
+
+            items.append(CollectedItem(
+                external_id=f"{email_id}_{job_count}",
+                content=content,
+                doc_type="job",
+                observed_at=observed_at,
+                metadata={
+                    "title": title,
+                    "company": company,
+                    "location": location,
+                    "remote_type": remote_type,
+                    "salary_min": salary_min,
+                    "salary_max": salary_max,
+                    "skills": [],
+                    "url": None,
+                    "synthetic": False,
+                },
+            ))
+            job_count += 1
+        i += 1
+
+    return items
 
 
 def _extract_gmail_body(payload: dict) -> str:  # pragma: no cover - live API
