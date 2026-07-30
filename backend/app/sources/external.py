@@ -232,12 +232,19 @@ class GmailSource(Source):
         return configured
 
     def collect(self, limit: int = 100) -> list[CollectedItem]:
+        log.info("gmail: starting collection")
         if not self.is_configured():
             raise SourceUnavailable("gmail credentials not configured")
-        return _with_retry(
-            lambda: self._collect_once(limit),
-            source_id=self.source_id,
-        )
+        try:
+            result = _with_retry(
+                lambda: self._collect_once(limit),
+                source_id=self.source_id,
+            )
+            log.info("gmail: collected %d items", len(result))
+            return result
+        except Exception as exc:
+            log.error("gmail: collection failed: %s", exc)
+            raise
 
     def _collect_once(self, limit: int) -> list[CollectedItem]:  # pragma: no cover
         try:
