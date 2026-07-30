@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <p className="hidden font-mono text-xs text-muted sm:block">counts before conclusions</p>
             </div>
             {/* Mobile: horizontally scrollable pill nav */}
-            <nav className="mt-3 -mx-4 flex overflow-x-auto px-4 pb-1 gap-1 sm:mx-0 sm:mt-5 sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:overflow-visible sm:px-0 sm:pb-0">
+            <nav className="mt-3 flex overflow-x-auto pb-1 gap-1 sm:mt-5 sm:flex-wrap sm:gap-x-6 sm:gap-y-2 sm:overflow-visible sm:pb-0">
               {NAV.map((item) => (
                 <Link
                   key={item.href}

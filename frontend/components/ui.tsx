@@ -121,16 +121,19 @@ export function Empty({ title, action }: { title: string; action: string }) {
     <div className="rounded-card border border-dashed border-line bg-surface p-8 text-center">
       <p className="font-display text-lg font-bold">{title}</p>
       <p className="mt-2 text-sm text-muted">{action}</p>
-      <code className="mt-4 inline-block rounded bg-paper px-3 py-2 font-mono text-xs">
-        make bootstrap
-      </code>
+      <a
+        href="/admin"
+        className="mt-4 inline-block rounded-card border border-proof px-4 py-2 font-mono text-xs text-proof hover:bg-proofSoft"
+      >
+        Go to Admin → Run collection loop
+      </a>
     </div>
   );
 }
 
 export function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
   return (
-    <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+    <div className="overflow-x-auto">
       <table className="w-full min-w-[480px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-line text-left">
