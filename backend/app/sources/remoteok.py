@@ -48,8 +48,10 @@ class RemoteOKSource(Source):
             response = httpx.get(
                 REMOTEOK_API,
                 headers={
-                    "User-Agent": "SHIOS/1.0 job-market-intelligence",
-                    "Accept": "application/json",
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Referer": "https://remoteok.com/",
                 },
                 timeout=30.0,
                 follow_redirects=True,
@@ -59,8 +61,10 @@ class RemoteOKSource(Source):
 
         if response.status_code == 429:
             raise RateLimitExceeded("RemoteOK rate limit reached")
+        if response.status_code == 403:
+            raise SourceUnavailable(f"RemoteOK blocked this server (HTTP 403) — try again later or use a different job source")
         if not response.ok:
-            raise SourceUnavailable(f"RemoteOK returned HTTP {response.status_code}")
+            raise SourceUnavailable(f"RemoteOK returned HTTP {response.status_code}: {response.text[:200]}")
 
         try:
             raw = response.json()

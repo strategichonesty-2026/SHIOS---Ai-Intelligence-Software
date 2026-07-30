@@ -23,8 +23,14 @@ export default function AdminPage() {
         );
         if (data.done) {
           setRunStatus("done");
+          const errors = (data.source_errors ?? [])
+            .filter((e: any) => e.error)
+            .map((e: any) => `  • ${e.source}: ${e.error}`)
+            .join("\n");
           setRunLog(
-            `✓ Complete!\n\nJobs collected: ${data.jobs ?? "—"}\nDocuments: ${data.documents ?? "—"}\nTrends computed: ${data.trends ?? "—"}\n\nRefresh Jobs or Trends page to see real data.`
+            `✓ Complete!\n\nJobs collected: ${data.jobs ?? "—"}\nDocuments: ${data.documents ?? "—"}\nTrends computed: ${data.trends ?? "—"}` +
+            (errors ? `\n\nSource warnings:\n${errors}` : "") +
+            `\n\nRefresh Jobs or Trends page to see real data.`
           );
           // Browser notification
           if (Notification.permission === "granted") {
