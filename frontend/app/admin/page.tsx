@@ -78,7 +78,7 @@ export default function AdminPage() {
         </p>
       </header>
 
-      {/* Collection loop */
+      {/* Collection loop */}
       <div className="rounded-card border border-line bg-surface p-6 space-y-4">
         <div>
           <p className="font-mono text-xs uppercase text-muted">Full collection loop</p>
