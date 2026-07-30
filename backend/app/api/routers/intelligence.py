@@ -261,6 +261,8 @@ def list_jobs(
     company: str | None = Query(default=None),
     skill: str | None = Query(default=None),
     has_salary: bool | None = Query(default=None),
+    source: str | None = Query(default=None),
+    sort: str = Query(default="newest"),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     session: Session = Depends(get_session),
@@ -283,13 +285,16 @@ def list_jobs(
         query = query.where(Job.salary_min.is_not(None))
     elif has_salary is False:
         query = query.where(Job.salary_min.is_(None))
+    if source:
+        query = query.where(NormalizedDocument.source == source)
 
     total = session.scalar(
         select(func.count()).select_from(query.subquery())
     ) or 0
 
+    order = Job.posted_at.asc() if sort == "oldest" else Job.posted_at.desc()
     rows = session.execute(
-        query.order_by(Job.posted_at.desc()).limit(limit).offset(offset)
+        query.order_by(order).limit(limit).offset(offset)
     ).all()
 
     items = []

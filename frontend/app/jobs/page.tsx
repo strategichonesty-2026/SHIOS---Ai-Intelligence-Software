@@ -10,7 +10,7 @@ const PER_PAGE = 25;
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: { role?: string; remote?: string; salary?: string; page?: string };
+  searchParams: { role?: string; remote?: string; salary?: string; page?: string; source?: string; sort?: string };
 }) {
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const offset = (page - 1) * PER_PAGE;
@@ -19,6 +19,8 @@ export default async function JobsPage({
   if (searchParams.role) params.set("role", searchParams.role);
   if (searchParams.remote) params.set("remote_type", searchParams.remote);
   if (searchParams.salary === "yes") params.set("has_salary", "true");
+  if (searchParams.source) params.set("source", searchParams.source);
+  if (searchParams.sort) params.set("sort", searchParams.sort);
   params.set("offset", String(offset));
   const qs = `&${params.toString()}`;
 
@@ -36,6 +38,8 @@ export default async function JobsPage({
     if (searchParams.role) q.set("role", searchParams.role);
     if (searchParams.remote) q.set("remote", searchParams.remote);
     if (searchParams.salary) q.set("salary", searchParams.salary);
+    if (searchParams.source) q.set("source", searchParams.source);
+    if (searchParams.sort) q.set("sort", searchParams.sort);
     if (p > 1) q.set("page", String(p));
     const s = q.toString();
     return s ? `/jobs?${s}` : "/jobs";
@@ -85,6 +89,16 @@ export default async function JobsPage({
           />
         ))}
       </nav>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-mono text-xs text-muted">Source:</span>
+        <FilterLink href="/jobs" label="All" active={!searchParams.source} />
+        <FilterLink href="/jobs?source=gmail_linkedin_jobs" label="LinkedIn" active={searchParams.source === "gmail_linkedin_jobs"} />
+        <FilterLink href="/jobs?source=job_rss" label="Job Board" active={searchParams.source === "job_rss"} />
+        <span className="ml-4 font-mono text-xs text-muted">Sort:</span>
+        <FilterLink href={`/jobs${searchParams.source ? `?source=${searchParams.source}&sort=newest` : "?sort=newest"}`} label="Newest" active={!searchParams.sort || searchParams.sort === "newest"} />
+        <FilterLink href={`/jobs${searchParams.source ? `?source=${searchParams.source}&sort=oldest` : "?sort=oldest"}`} label="Oldest" active={searchParams.sort === "oldest"} />
+      </div>
 
       <Card eyebrow={`${(offset + 1).toLocaleString()}–${Math.min(offset + jobs.returned, jobs.total).toLocaleString()} of ${jobs.total.toLocaleString()}`} title="Postings">
         <Table head={["Position", "Company", "Location", "Salary", "Posted", "Skills"]}>
