@@ -56,13 +56,23 @@ def trigger_agent(
 @router.delete("/synthetic")
 def purge_synthetic(session: Session = Depends(get_session)) -> dict:
     """Remove all sample_jobs synthetic data from the database."""
-    # Delete raw documents from sample_jobs source — cascades to normalized + evidence
     result = session.execute(
         sql_delete(RawDocument).where(RawDocument.source == "sample_jobs")
     )
     deleted = result.rowcount
     session.commit()
     return {"status": "ok", "deleted_raw_documents": deleted}
+
+
+@router.delete("/source/{source_id}")
+def purge_source(source_id: str, session: Session = Depends(get_session)) -> dict:
+    """Remove all documents from a specific source — use to re-collect cleanly."""
+    result = session.execute(
+        sql_delete(RawDocument).where(RawDocument.source == source_id)
+    )
+    deleted = result.rowcount
+    session.commit()
+    return {"status": "ok", "source": source_id, "deleted_raw_documents": deleted}
 
 
 @router.get("")

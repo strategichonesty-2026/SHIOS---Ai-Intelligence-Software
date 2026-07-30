@@ -5,6 +5,24 @@ import { useState } from "react";
 export default function AdminPage() {
   const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runLog, setRunLog] = useState<string>("");
+  const [resetStatus, setResetStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [resetLog, setResetLog] = useState<string>("");
+
+  async function resetLinkedIn() {
+    setResetStatus("running");
+    setResetLog("Removing bad LinkedIn records...");
+    try {
+      const res = await fetch("/api/purge-source", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "gmail_linkedin_jobs" }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setResetStatus("done");
+      setResetLog(`Removed ${data.deleted_raw_documents} records. Now run the collection loop to re-import clean LinkedIn jobs.`);
+    } catch (err: any) {
+      setResetStatus("error");
+      setResetLog(`Error: ${err.message}`);
+    }
+  }
+
   async function pollUntilDone() {
     const start = Date.now();
     const maxWait = 5 * 60 * 1000; // 5 minutes
@@ -104,6 +122,23 @@ export default function AdminPage() {
             {runLog}
           </pre>
         )}
+      </div>
+
+      <div className="rounded-card border border-line bg-surface p-6 space-y-4">
+        <div>
+          <p className="font-mono text-xs uppercase text-muted">Reset LinkedIn data</p>
+          <p className="mt-1 text-sm text-muted">
+            Removes all existing LinkedIn job records and re-collects cleanly from Gmail. Use this to fix dash/footer rows.
+          </p>
+        </div>
+        <button
+          onClick={resetLinkedIn}
+          disabled={resetStatus === "running"}
+          className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${resetStatus === "running" ? "border-line text-muted cursor-not-allowed" : "border-provisional text-provisional hover:bg-provisionalSoft"}`}
+        >
+          {resetStatus === "running" ? "Resetting..." : resetStatus === "done" ? "✓ Done — run loop now" : "Reset LinkedIn data →"}
+        </button>
+        {resetLog && <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">{resetLog}</pre>}
       </div>
 
       <div className="rounded-card border border-line bg-surface p-6 space-y-2">
