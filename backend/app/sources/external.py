@@ -227,7 +227,9 @@ class GmailSource(Source):
     doc_type = "email"
 
     def is_configured(self) -> bool:
-        return bool(settings.gmail_credentials_json)
+        configured = bool(settings.gmail_credentials_json)
+        log.info("gmail: is_configured=%s, credentials_len=%d", configured, len(settings.gmail_credentials_json or ""))
+        return configured
 
     def collect(self, limit: int = 100) -> list[CollectedItem]:
         if not self.is_configured():
