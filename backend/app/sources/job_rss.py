@@ -36,12 +36,14 @@ def _strip(text: str) -> str:
 
 # Default job RSS feeds — public, no key needed
 DEFAULT_JOB_FEEDS = [
-    # Indeed remote tech jobs
-    "https://www.indeed.com/rss?q=software+engineer+OR+data+engineer+OR+AI+engineer&l=remote&sort=date&limit=50",
-    # Indeed remote data/ML jobs
-    "https://www.indeed.com/rss?q=machine+learning+OR+data+scientist+OR+LLM&l=remote&sort=date&limit=50",
-    # LinkedIn remote engineering jobs (public RSS)
+    # LinkedIn remote software engineering jobs
     "https://www.linkedin.com/jobs/search/?keywords=software+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
+    # LinkedIn remote data/AI jobs
+    "https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
+    # LinkedIn remote ML/AI jobs
+    "https://www.linkedin.com/jobs/search/?keywords=machine+learning+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
+    # LinkedIn remote python jobs
+    "https://www.linkedin.com/jobs/search/?keywords=python+developer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
 ]
 
 
@@ -110,7 +112,7 @@ class JobRSSSource(Source):
 
         if response.status_code == 429:
             raise RateLimitExceeded(f"rate limited by {feed_url}")
-        if not response.ok:
+        if not response.is_success:
             raise SourceUnavailable(f"feed returned HTTP {response.status_code}")
 
         parsed = feedparser.parse(response.text)
