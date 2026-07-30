@@ -52,6 +52,7 @@ export type JobRow = {
   skills: string[];
   technologies: string[];
   document_id: string;
+  url: string | null;
 };
 
 export type JobFacets = {
@@ -100,7 +101,7 @@ export const intelligence = {
     safeGet<{ source: string; label: string; reliability: string; reliability_basis: string; synthetic: boolean; items: any[] }>(
       `/evidence/by-source/${encodeURIComponent(source)}?limit=50`,
     ),
-  jobs: (qs = "") => safeGet<{ total: number; returned: number; items: JobRow[]; note: string }>(`/jobs?limit=50${qs}`),
+  jobs: (qs = "") => safeGet<{ total: number; returned: number; items: JobRow[]; note: string }>(`/jobs?limit=25${qs}`),
   jobFacets: () => safeGet<JobFacets>("/jobs/facets"),
   trust: (targetType: string, id: string) => safeGet<TrustPayload>(`/trust/${targetType}/${id}`),
 };
