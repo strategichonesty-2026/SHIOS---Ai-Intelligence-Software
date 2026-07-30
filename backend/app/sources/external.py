@@ -268,15 +268,18 @@ class GmailSource(Source):
                 log.info("gmail: token refreshed successfully")
 
             service = build("gmail", "v1", credentials=creds, cache_discovery=False)
+            log.info("gmail: querying with q=%s", settings.gmail_query)
             listing = (
                 service.users()
                 .messages()
                 .list(userId="me", q=settings.gmail_query, maxResults=limit)
                 .execute()
             )
+            log.info("gmail: query returned %d messages", len(listing.get("messages", [])))
         except ImportError:
             raise
         except Exception as exc:
+            log.error("gmail: API error: %s", exc)
             raise SourceUnavailable(f"gmail unavailable: {exc}") from exc
 
         items: list[CollectedItem] = []

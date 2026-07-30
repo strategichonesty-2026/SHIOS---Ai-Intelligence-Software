@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     github_token: str | None = None
     job_rss_feeds: str | None = None  # optional override for job RSS feed URLs
     gmail_credentials_json: str | None = None
-    gmail_query: str = "from:jobalerts-noreply@linkedin.com newer_than:7d"
+    gmail_query: str = "from:jobalerts-noreply@linkedin.com newer_than:30d"
 
     # --- Source retry / resilience ----------------------------------------
     source_max_retries: int = Field(default=3, description="Max attempts per source before giving up")
