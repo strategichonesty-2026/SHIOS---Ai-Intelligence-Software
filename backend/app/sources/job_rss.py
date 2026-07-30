@@ -34,16 +34,16 @@ def _strip(text: str) -> str:
     return _TAG_RE.sub(" ", text or "").replace("&nbsp;", " ").replace("&amp;", "&").strip()
 
 
-# Default job RSS feeds — public, no key needed
+# Default job RSS feeds — verified working, no API key needed
 DEFAULT_JOB_FEEDS = [
-    # LinkedIn remote software engineering jobs
-    "https://www.linkedin.com/jobs/search/?keywords=software+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
-    # LinkedIn remote data/AI jobs
-    "https://www.linkedin.com/jobs/search/?keywords=data+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
-    # LinkedIn remote ML/AI jobs
-    "https://www.linkedin.com/jobs/search/?keywords=machine+learning+engineer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
-    # LinkedIn remote python jobs
-    "https://www.linkedin.com/jobs/search/?keywords=python+developer&location=Remote&f_WT=2&f_TPR=r604800&format=rss",
+    # Arbeitnow — remote + relocation tech jobs RSS (verified working)
+    "https://www.arbeitnow.com/api/job-board-api",
+    # Jobicy — remote-only tech jobs RSS (verified working)
+    "https://jobicy.com/?feed=job_feed&job_categories=dev-engineer&remote=1",
+    # Jobicy — data/ML/AI roles
+    "https://jobicy.com/?feed=job_feed&job_categories=data-science&remote=1",
+    # Remotive — remote tech jobs RSS (verified working)
+    "https://remotive.com/remote-jobs/feed/software-dev",
 ]
 
 
@@ -102,7 +102,7 @@ class JobRSSSource(Source):
                 feed_url,
                 headers={
                     "User-Agent": "Mozilla/5.0 (compatible; job-market-research-bot/1.0)",
-                    "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                    "Accept": "application/json, application/rss+xml, application/xml, text/xml, */*",
                 },
                 timeout=20.0,
                 follow_redirects=True,
@@ -114,6 +114,11 @@ class JobRSSSource(Source):
             raise RateLimitExceeded(f"rate limited by {feed_url}")
         if not response.is_success:
             raise SourceUnavailable(f"feed returned HTTP {response.status_code}")
+
+        # Handle JSON job feeds (e.g. Arbeitnow)
+        content_type = response.headers.get("content-type", "")
+        if "json" in content_type or response.text.strip().startswith("{"):
+            return self._parse_json_feed(response.text, limit, seen_ids)
 
         parsed = feedparser.parse(response.text)
         items: list[CollectedItem] = []
@@ -172,4 +177,57 @@ class JobRSSSource(Source):
                 )
             )
 
+        return items
+
+    def _parse_json_feed(self, text: str, limit: int, seen_ids: set[str]) -> list[CollectedItem]:
+        import json
+        try:
+            data = json.loads(text)
+        except Exception:
+            return []
+
+        jobs = data.get("data", data) if isinstance(data, dict) else data
+        if not isinstance(jobs, list):
+            return []
+
+        items: list[CollectedItem] = []
+        for job in jobs[:limit]:
+            entry_id = str(job.get("slug") or job.get("id") or job.get("url") or "")
+            if not entry_id or entry_id in seen_ids:
+                continue
+            seen_ids.add(entry_id)
+
+            title = _strip(job.get("title") or job.get("position") or "").strip()
+            company = _strip(job.get("company_name") or job.get("company") or "").strip()
+            if not title:
+                continue
+
+            description = _strip(job.get("description") or "")
+            tags = job.get("tags") or job.get("keywords") or []
+            url = job.get("url") or job.get("apply_url") or ""
+
+            content_parts = [f"{title} at {company}" if company else title]
+            content_parts.append("Location: Remote")
+            if description:
+                content_parts.append(description[:1500])
+            if tags:
+                content_parts.append(f"Skills: {', '.join(str(t) for t in tags[:10])}")
+
+            items.append(CollectedItem(
+                external_id=entry_id,
+                content="\n\n".join(content_parts),
+                doc_type="job",
+                observed_at=datetime.now(UTC),
+                metadata={
+                    "title": title,
+                    "company": company or None,
+                    "location": "Remote",
+                    "remote_type": "remote",
+                    "url": url,
+                    "salary_min": None,
+                    "salary_max": None,
+                    "skills": [str(t) for t in tags[:10]],
+                    "synthetic": False,
+                },
+            ))
         return items
