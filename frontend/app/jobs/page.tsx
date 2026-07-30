@@ -58,7 +58,7 @@ export default async function JobsPage({
         </p>
       </header>
 
-      {jobs.items.every((j: JobRow) => j.synthetic) && (
+      {jobs.items.length > 0 && jobs.items.every((j: JobRow) => j.synthetic) && (
         <div className="rounded-card border border-provisional bg-provisional/10 px-4 py-3 text-sm">
           <strong className="text-provisional">Demo data only.</strong>{" "}
           All job postings shown are computer-generated samples, not real listings.
