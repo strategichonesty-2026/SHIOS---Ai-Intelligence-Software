@@ -63,7 +63,7 @@ class RemoteOKSource(Source):
             raise RateLimitExceeded("RemoteOK rate limit reached")
         if response.status_code == 403:
             raise SourceUnavailable(f"RemoteOK blocked this server (HTTP 403) — try again later or use a different job source")
-        if not response.ok:
+        if not response.is_success:
             raise SourceUnavailable(f"RemoteOK returned HTTP {response.status_code}: {response.text[:200]}")
 
         try:

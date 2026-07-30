@@ -5,9 +5,6 @@ import { useState } from "react";
 export default function AdminPage() {
   const [runStatus, setRunStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runLog, setRunLog] = useState<string>("");
-  const [purgeStatus, setPurgeStatus] = useState<"idle" | "running" | "done" | "error">("idle");
-  const [purgeLog, setPurgeLog] = useState<string>("");
-
   async function pollUntilDone() {
     const start = Date.now();
     const maxWait = 5 * 60 * 1000; // 5 minutes
@@ -69,21 +66,6 @@ export default function AdminPage() {
     }
   }
 
-  async function purgeSynthetic() {
-    setPurgeStatus("running");
-    setPurgeLog("Removing demo data...");
-    try {
-      const res = await fetch("/api/purge-synthetic", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
-      setPurgeStatus("done");
-      setPurgeLog(`Done. Removed ${data.deleted_raw_documents ?? 0} synthetic records.`);
-    } catch (err: any) {
-      setPurgeStatus("error");
-      setPurgeLog(`Error: ${err.message}`);
-    }
-  }
-
   return (
     <div className="max-w-2xl space-y-8">
       <header>
@@ -96,38 +78,10 @@ export default function AdminPage() {
         </p>
       </header>
 
-      {/* Step 1 — Remove demo data */}
-      <div className="rounded-card border border-provisional bg-surface p-6 space-y-4">
-        <div>
-          <p className="font-mono text-xs uppercase text-provisional">Step 1 — Remove demo data</p>
-          <p className="mt-1 text-sm text-muted">
-            Deletes all synthetic sample_jobs records. Run this once before collecting real data.
-          </p>
-        </div>
-        <button
-          onClick={purgeSynthetic}
-          disabled={purgeStatus === "running" || purgeStatus === "done"}
-          className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${
-            purgeStatus === "done"
-              ? "border-line text-muted cursor-not-allowed"
-              : purgeStatus === "running"
-              ? "border-line text-muted cursor-not-allowed"
-              : "border-provisional text-provisional hover:bg-provisionalSoft"
-          }`}
-        >
-          {purgeStatus === "running" ? "Removing..." : purgeStatus === "done" ? "✓ Done" : "Remove demo data →"}
-        </button>
-        {purgeLog && (
-          <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
-            {purgeLog}
-          </pre>
-        )}
-      </div>
-
-      {/* Step 2 — Run collection loop */}
+      {/* Collection loop */
       <div className="rounded-card border border-line bg-surface p-6 space-y-4">
         <div>
-          <p className="font-mono text-xs uppercase text-muted">Step 2 — Collect real data</p>
+          <p className="font-mono text-xs uppercase text-muted">Full collection loop</p>
           <p className="mt-1 text-sm text-muted">
             Collects from RemoteOK + GitHub + RSS, extracts entities, computes trends,
             publishes forecasts and recommendations. You'll get a browser notification
@@ -145,7 +99,7 @@ export default function AdminPage() {
               : "border-proof text-proof hover:bg-proofSoft"
           }`}
         >
-          {runStatus === "running" ? "Running — check back in 2 min..." : runStatus === "done" ? "✓ Complete" : "Run collection loop now →"}
+          {runStatus === "running" ? "Running — you'll get a notification when done..." : runStatus === "done" ? "✓ Complete" : "Run collection loop now →"}
         </button>
         {runLog && (
           <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">
