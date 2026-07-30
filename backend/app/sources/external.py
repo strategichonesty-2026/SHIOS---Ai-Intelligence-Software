@@ -326,50 +326,79 @@ def _parse_linkedin_job_alert(
     body: str,
     observed_at,
 ) -> list:
-    """Parse a LinkedIn job alert email into individual CollectedItem job records."""
+    """Parse a LinkedIn job alert email into individual CollectedItem job records.
+    
+    Email format (after strip_html):
+        Job Title\r\nCompany Name\r\nCity, ST\r\n\r\nThis company is actively hiring\r\nView job: https://...
+    """
     import re
     items = []
     lines = [l.strip() for l in body.splitlines() if l.strip()]
 
-    # Extract role from subject: "Your job alert for Scrum Master"
-    role_match = re.search(r"job alert for (.+)", subject, re.IGNORECASE)
-    alert_role = role_match.group(1).strip() if role_match else ""
+    # Extract salary from subject line: "at Company: up to $70K/year"  
+    sal_match = re.search(r"\$([0-9,]+)[Kk]?/?(year|hour)?.*\$([0-9,]+)[Kk]?", subject)
+    subj_salary_min = subj_salary_max = None
+    if sal_match:
+        try:
+            v1 = float(sal_match.group(1).replace(",", ""))
+            v3 = float(sal_match.group(3).replace(",", ""))
+            subj_salary_min = v1 * (1000 if v1 < 1000 else 1)
+            subj_salary_max = v3 * (1000 if v3 < 1000 else 1)
+        except Exception:
+            pass
 
-    # LinkedIn email format: company name line, then job title line, then "company · location"
-    # Find job blocks by looking for "·" separator lines
-    i = 0
+    # Skip header lines until we hit job blocks
+    # Job block pattern: title line, company line, location line, then blank or "actively hiring"
+    SKIP = {"this company is actively hiring", "actively recruiting", "apply with resume & profile",
+            "new jobs match your preferences.", "a new job matches your preferences.",
+            "new jobs in", "your job alert for"}
+    
+    def is_skip(line: str) -> bool:
+        l = line.lower()
+        return any(l.startswith(s) or l == s for s in SKIP) or l.startswith("view job:") or l.startswith("http") or l.startswith("see all") or l.startswith("1 connection")
+
+    clean = [l for l in lines if l and not is_skip(l)]
+    
     job_count = 0
-    while i < len(lines):
-        line = lines[i]
-        # Location line format: "Company · City, ST" or "Company · City, ST (On-site)"
-        if " · " in line and i > 0:
-            parts = line.split(" · ", 1)
-            company = parts[0].strip()
-            location_raw = parts[1].strip()
-            # Remove work type suffix
-            location = re.sub(r"\s*\((On-site|Remote|Hybrid)\)\s*$", "", location_raw).strip()
-            remote_type = "remote"
-            if "(On-site)" in location_raw:
+    i = 0
+    while i < len(clean) - 1:
+        title = clean[i]
+        company = clean[i + 1] if i + 1 < len(clean) else ""
+        location = clean[i + 2] if i + 2 < len(clean) else ""
+        
+        # Validate: title should look like a job title (not a URL, not a location)
+        # Company should not look like a location
+        # Location should contain state/country indicator
+        location_looks_valid = (
+            location and 
+            ("," in location or location in ("United States", "Remote") or 
+             any(w in location for w in ["Area", "Metropolitan", "MN", "IL", "TX", "CA", "NY", "FL", "OH", "WA"]))
+        )
+        title_looks_valid = (
+            title and 
+            len(title) > 3 and 
+            not title.startswith("http") and
+            not any(c.isdigit() and title.count("/") > 1 for c in title)
+        )
+        company_looks_valid = (
+            company and 
+            len(company) > 1 and 
+            not company.startswith("http") and
+            "," not in company[:15]  # locations have commas early
+        )
+        
+        if title_looks_valid and company_looks_valid and location_looks_valid:
+            remote_type = "remote" if "United States" in location or "Remote" in location else "onsite"
+            if "TX" in location or "IL" in location or "MN" in location:
                 remote_type = "onsite"
-            elif "(Hybrid)" in location_raw:
-                remote_type = "hybrid"
-
-            # Job title is the line before
-            title = lines[i - 1] if i > 0 else alert_role
-
-            # Salary is the next line if it matches $XXK-$XXXK
-            salary_min = None
-            salary_max = None
-            if i + 1 < len(lines):
-                sal_match = re.search(r"\$([0-9,]+)K?.*\$([0-9,]+)K?", lines[i + 1])
-                if sal_match:
-                    salary_min = float(sal_match.group(1).replace(",", "")) * 1000
-                    salary_max = float(sal_match.group(2).replace(",", "")) * 1000
-
-            content = f"{title} at {company}\nLocation: {location}\n"
-            if salary_min:
-                content += f"Salary: ${int(salary_min):,}–${int(salary_max):,}\n"
-            content += f"Role type: {alert_role}"
+            
+            content = f"{title} at {company}\nLocation: {location}"
+            if subj_salary_min:
+                content += f"\nSalary: ${int(subj_salary_min):,}"
+            
+            # Extract URL from original body
+            url_match = re.search(r"View job: (https://[^\s]+)", body)
+            url = url_match.group(1) if url_match else None
 
             items.append(CollectedItem(
                 external_id=f"{email_id}_{job_count}",
@@ -381,15 +410,17 @@ def _parse_linkedin_job_alert(
                     "company": company,
                     "location": location,
                     "remote_type": remote_type,
-                    "salary_min": salary_min,
-                    "salary_max": salary_max,
+                    "salary_min": subj_salary_min,
+                    "salary_max": subj_salary_max,
                     "skills": [],
-                    "url": None,
+                    "url": url,
                     "synthetic": False,
                 },
             ))
             job_count += 1
-        i += 1
+            i += 3  # skip past title, company, location
+        else:
+            i += 1
 
     return items
 
