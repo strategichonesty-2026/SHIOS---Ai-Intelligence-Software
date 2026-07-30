@@ -36,14 +36,16 @@ def _strip(text: str) -> str:
 
 # Default job RSS feeds — verified working, no API key needed
 DEFAULT_JOB_FEEDS = [
-    # Arbeitnow — remote + relocation tech jobs RSS (verified working)
-    "https://www.arbeitnow.com/api/job-board-api",
-    # Jobicy — remote-only tech jobs RSS (verified working)
+    # Jobicy — remote-only tech/engineering jobs (US-focused, verified working)
     "https://jobicy.com/?feed=job_feed&job_categories=dev-engineer&remote=1",
     # Jobicy — data/ML/AI roles
     "https://jobicy.com/?feed=job_feed&job_categories=data-science&remote=1",
-    # Remotive — remote tech jobs RSS (verified working)
-    "https://remotive.com/remote-jobs/feed/software-dev",
+    # Jobicy — product/management roles
+    "https://jobicy.com/?feed=job_feed&job_categories=product-management&remote=1",
+    # We Work Remotely — tech jobs RSS (US-focused)
+    "https://weworkremotely.com/categories/remote-programming-jobs.rss",
+    # We Work Remotely — data science
+    "https://weworkremotely.com/categories/remote-data-science-jobs.rss",
 ]
 
 
