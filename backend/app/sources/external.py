@@ -351,11 +351,18 @@ def _parse_linkedin_job_alert(
     # Job block pattern: title line, company line, location line, then blank or "actively hiring"
     SKIP = {"this company is actively hiring", "actively recruiting", "apply with resume & profile",
             "new jobs match your preferences.", "a new job matches your preferences.",
-            "new jobs in", "your job alert for"}
+            "new jobs in", "your job alert for", "learn why we included this",
+            "you are receiving", "manage job alerts", "unsubscribe", "premium icon",
+            "strategic honesty", "stand out", "try premium", "get the new", "also available",
+            "download on", "get it on", "this email was intended"}
     
     def is_skip(line: str) -> bool:
         l = line.lower()
-        return any(l.startswith(s) or l == s for s in SKIP) or l.startswith("view job:") or l.startswith("http") or l.startswith("see all") or l.startswith("1 connection")
+        return (any(l.startswith(s) or l == s for s in SKIP) or 
+                l.startswith("view job:") or l.startswith("http") or 
+                l.startswith("see all") or l.startswith("1 connection") or
+                "linkedin.com/help" in l or "linkedin.com/legal" in l or
+                "©" in l or len(l) < 2)
 
     clean = [l for l in lines if l and not is_skip(l)]
     
@@ -392,6 +399,7 @@ def _parse_linkedin_job_alert(
             if "TX" in location or "IL" in location or "MN" in location:
                 remote_type = "onsite"
             
+            location = location[:255]  # DB varchar(255) limit
             content = f"{title} at {company}\nLocation: {location}"
             if subj_salary_min:
                 content += f"\nSalary: ${int(subj_salary_min):,}"
