@@ -301,9 +301,11 @@ class GmailSource(Source):
 
             # Parse LinkedIn job alert emails into individual job items
             if "jobalerts-noreply@linkedin.com" in from_addr:
+                log.info("gmail: parsing linkedin email, subject=%s, body_len=%d, body_preview=%s", subject[:60], len(clean_body), repr(clean_body[:300]))
                 job_items = _parse_linkedin_job_alert(
                     ref["id"], subject, clean_body, observed_at
                 )
+                log.info("gmail: parsed %d jobs from email", len(job_items))
                 items.extend(job_items)
             else:
                 items.append(
