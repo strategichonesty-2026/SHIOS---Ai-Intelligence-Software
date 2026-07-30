@@ -10,11 +10,13 @@ from app.sources.base import (
     SourceUnavailable,
 )
 from app.sources.external import GitHubSource, GmailSource, RSSSource
+from app.sources.job_rss import JobRSSSource
 from app.sources.remoteok import RemoteOKSource
 from app.sources.sample_jobs import SampleJobsSource
 
 _FACTORIES = {
     SampleJobsSource.source_id: SampleJobsSource,
+    JobRSSSource.source_id: JobRSSSource,
     RemoteOKSource.source_id: RemoteOKSource,
     RSSSource.source_id: RSSSource,
     GitHubSource.source_id: GitHubSource,
@@ -33,6 +35,7 @@ def available_source_ids() -> list[str]:
 
 __all__ = [
     "CollectedItem",
+    "JobRSSSource",
     "RemoteOKSource",
     "GitHubSource",
     "GmailSource",

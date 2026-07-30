@@ -82,6 +82,14 @@ SOURCE_CATALOGUE: dict[str, dict[str, Any]] = {
         "synthetic": False,
         "primary": True,
     },
+    "job_rss": {
+        "label": "Job board RSS feeds",
+        "category": "Job Postings",
+        "reliability": "high",
+        "basis": "Real job postings from public RSS feeds (Indeed, LinkedIn). No API key required.",
+        "synthetic": False,
+        "primary": True,
+    },
 }
 
 DOC_TYPE_CATEGORY = {

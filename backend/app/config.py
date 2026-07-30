@@ -46,10 +46,11 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 45.0
 
     # --- Collection sources ----------------------------------------------
-    enabled_sources: str = "sample_jobs,rss,github"
+    enabled_sources: str = "job_rss,rss,github"
     rss_feeds: str = "https://hnrss.org/frontpage"
     github_topics: str = "agile,project-management,llm"
     github_token: str | None = None
+    job_rss_feeds: str | None = None  # optional override for job RSS feed URLs
     gmail_credentials_json: str | None = None
     gmail_query: str = "from:jobalerts-noreply@linkedin.com newer_than:7d"
 

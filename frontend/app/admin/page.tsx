@@ -157,7 +157,7 @@ export default function AdminPage() {
       <div className="rounded-card border border-line bg-surface p-6 space-y-2">
         <p className="font-mono text-xs uppercase text-muted">Current data sources</p>
         <ul className="space-y-1 text-sm text-muted mt-2">
-          <li><span className="text-proof font-medium">RemoteOK</span> — real remote job postings, no API key needed</li>
+          <li><span className="text-proof font-medium">Job RSS</span> — real job postings from Indeed + LinkedIn RSS feeds</li>
           <li><span className="text-proof font-medium">GitHub</span> — repository momentum by topic</li>
           <li><span className="text-proof font-medium">RSS</span> — tech news and articles</li>
         </ul>
