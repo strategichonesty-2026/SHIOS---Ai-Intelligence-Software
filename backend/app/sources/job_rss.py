@@ -76,7 +76,9 @@ class JobRSSSource(Source):
         seen_ids: set[str] = set()
         per_feed = max(1, limit // max(1, len(self.feeds)))
 
+        log.info("job_rss: starting collection from %d feeds", len(self.feeds))
         for feed_url in self.feeds:
+            log.info("job_rss: fetching %s", feed_url[:80])
             try:
                 batch = self._fetch_feed(feed_url, feedparser, per_feed, seen_ids)
                 items.extend(batch)
