@@ -292,20 +292,6 @@ def list_jobs(
         query.order_by(Job.posted_at.desc()).limit(limit).offset(offset)
     ).all()
 
-    # Get URLs from raw document metadata in bulk
-    norm_ids = [r[0].normalized_document_id for r in rows]
-    url_map: dict[str, str] = {}
-    if norm_ids:
-        from app.models.tables import NormalizedDocument, RawDocument
-        raw_rows = session.execute(
-            select(NormalizedDocument.id, RawDocument.doc_metadata)
-            .join(RawDocument, NormalizedDocument.raw_document_id == RawDocument.id)
-            .where(NormalizedDocument.id.in_(norm_ids))
-        ).all()
-        for norm_id, meta in raw_rows:
-            if meta and meta.get("url"):
-                url_map[norm_id] = meta["url"]
-
     items = []
     for job, company_name, source in rows:
         # Skill filter applied in Python: skills live in a JSON column and the
@@ -331,7 +317,7 @@ def list_jobs(
                 "skills": job.skills or [],
                 "technologies": job.technologies or [],
                 "document_id": job.normalized_document_id,
-                "url": url_map.get(job.normalized_document_id),
+                "url": None,
             }
         )
 
