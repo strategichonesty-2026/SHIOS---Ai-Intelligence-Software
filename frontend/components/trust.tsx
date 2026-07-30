@@ -157,7 +157,17 @@ export function ReliabilityBadge({
   );
 }
 
+const SOURCE_LABELS: Record<string, string> = {
+  job_rss: "Job Board",
+  gmail_linkedin_jobs: "LinkedIn",
+  sample_jobs: "Sample Jobs",
+  github: "GitHub",
+  rss: "RSS",
+  remoteok: "RemoteOK",
+};
+
 export function SourceChip({ source, synthetic }: { source: string; synthetic?: boolean }) {
+  const label = SOURCE_LABELS[source] ?? titleCase(source);
   return (
     <span
       className={`inline-block rounded-card border px-2 py-[1px] font-mono text-xs ${
@@ -165,7 +175,7 @@ export function SourceChip({ source, synthetic }: { source: string; synthetic?: 
       }`}
       title={synthetic ? "Synthetic data — not market signal" : undefined}
     >
-      {titleCase(source)}
+      {label}
       {synthetic ? " · synthetic" : ""}
     </span>
   );
