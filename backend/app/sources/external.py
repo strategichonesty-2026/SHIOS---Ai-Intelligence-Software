@@ -385,14 +385,17 @@ def _parse_linkedin_job_alert(
             title and 
             len(title) > 3 and 
             not title.startswith("http") and
+            not all(c in "-– " for c in title) and  # skip divider lines
             not any(c.isdigit() and title.count("/") > 1 for c in title)
         )
         company_looks_valid = (
             company and 
             len(company) > 1 and 
             not company.startswith("http") and
+            not all(c in "-– " for c in company) and  # skip divider lines
             "," not in company[:15]  # locations have commas early
         )
+        location_looks_valid = location_looks_valid and not location.startswith("http") and "linkedin.com" not in location and "Manage your" not in location
         
         if title_looks_valid and company_looks_valid and location_looks_valid:
             remote_type = "remote" if "United States" in location or "Remote" in location else "onsite"
