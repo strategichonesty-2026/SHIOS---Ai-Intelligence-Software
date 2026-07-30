@@ -83,9 +83,7 @@ export default function AdminPage() {
         <div>
           <p className="font-mono text-xs uppercase text-muted">Full collection loop</p>
           <p className="mt-1 text-sm text-muted">
-            Collects from RemoteOK + GitHub + RSS, extracts entities, computes trends,
-            publishes forecasts and recommendations. You'll get a browser notification
-            when it's done — no need to watch this page.
+            Collects real job postings from LinkedIn + GitHub repos + RSS articles, extracts entities, computes trends, publishes forecasts and recommendations. You'll get a browser notification when it's done.
           </p>
         </div>
         <button
