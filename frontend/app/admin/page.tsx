@@ -94,7 +94,7 @@ export default function AdminPage() {
           Collection controls
         </h1>
         <p className="mt-2 text-sm text-muted">
-          Manage data collection and clean up demo data.
+          Trigger collection runs and manage source resets.
         </p>
       </header>
 
