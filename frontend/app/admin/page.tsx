@@ -7,6 +7,7 @@ export default function AdminPage() {
   const [runLog, setRunLog] = useState<string>("");
   const [resetStatus, setResetStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [resetLog, setResetLog] = useState<string>("");
+  const [resetConfirmText, setResetConfirmText] = useState<string>("");
 
   async function resetLinkedIn() {
     setResetStatus("running");
@@ -17,6 +18,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
       setResetStatus("done");
       setResetLog(`Removed ${data.deleted_raw_documents} records. Now run the collection loop to re-import clean LinkedIn jobs.`);
+      setResetConfirmText("");
     } catch (err: any) {
       setResetStatus("error");
       setResetLog(`Error: ${err.message}`);
@@ -131,10 +133,24 @@ export default function AdminPage() {
             Removes all existing LinkedIn job records and re-collects cleanly from Gmail. Use this to fix dash/footer rows.
           </p>
         </div>
+        <div>
+          <label htmlFor="reset-confirm" className="font-mono text-xs uppercase text-muted">
+            Type RESET to confirm
+          </label>
+          <input
+            id="reset-confirm"
+            type="text"
+            value={resetConfirmText}
+            onChange={(e) => setResetConfirmText(e.target.value)}
+            disabled={resetStatus === "running"}
+            className="mt-2 w-full rounded-card border border-line bg-paper px-3 py-2 font-mono text-sm outline-none focus-visible:border-provisional"
+            placeholder="RESET"
+          />
+        </div>
         <button
           onClick={resetLinkedIn}
-          disabled={resetStatus === "running"}
-          className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${resetStatus === "running" ? "border-line text-muted cursor-not-allowed" : "border-provisional text-provisional hover:bg-provisionalSoft"}`}
+          disabled={resetStatus === "running" || resetConfirmText !== "RESET"}
+          className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${resetStatus === "running" || resetConfirmText !== "RESET" ? "border-line text-muted cursor-not-allowed" : "border-provisional text-provisional hover:bg-provisionalSoft"}`}
         >
           {resetStatus === "running" ? "Resetting..." : resetStatus === "done" ? "✓ Done — run loop now" : "Reset LinkedIn data →"}
         </button>
