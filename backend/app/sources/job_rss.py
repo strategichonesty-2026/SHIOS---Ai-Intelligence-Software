@@ -7,6 +7,12 @@ so it counts as real market signal and clears the demo data banner.
 Default feeds cover remote tech/AI/data roles. Add more via JOB_RSS_FEEDS
 environment variable (comma-separated URLs).
 
+Every posting is scoped to US-based, English-language, tech/software/AI roles before
+it's collected — see app.services.geo_scope and the taxonomy relevance check in
+is_in_scope(). None of Jobicy/We Work Remotely/Arbeitnow document a request-level
+country+language filter, so this happens by inspecting each posting's own location
+field (and title as a fallback) after fetching.
+
 LinkedIn RSS format:
   https://www.linkedin.com/jobs/search/?keywords=python&location=Remote&f_WT=2&f_TPR=r604800
 
@@ -23,6 +29,8 @@ from datetime import UTC, datetime
 import httpx
 
 from app.config import settings
+from app.services.geo_scope import is_english_language, is_us_scoped_location
+from app.services.taxonomy import find_roles, find_skills, find_technologies
 from app.sources.base import CollectedItem, RateLimitExceeded, Source, SourceUnavailable
 
 log = logging.getLogger("shios.sources.job_rss")
@@ -34,15 +42,26 @@ def _strip(text: str) -> str:
     return _TAG_RE.sub(" ", text or "").replace("&nbsp;", " ").replace("&amp;", "&").strip()
 
 
-# Default job RSS feeds — verified working, no API key needed
+def is_in_scope(title: str, location: str, content: str) -> bool:
+    """US-based, English-language, and matching at least one tracked skill/tech/role."""
+    if not is_us_scoped_location(location, title=title):
+        return False
+    if not is_english_language(f"{title} {content}"):
+        return False
+    return bool(find_skills(content) or find_technologies(content) or find_roles(content))
+
+
+# Default job RSS feeds — verified working, no API key needed. geo=usa is Jobicy's
+# documented location filter (https://jobicy.com/?get=locations.md); We Work Remotely
+# and Arbeitnow-style JSON feeds have no equivalent, so those rely on is_in_scope() below.
 DEFAULT_JOB_FEEDS = [
-    # Jobicy — remote-only tech/engineering jobs (US-focused, verified working)
-    "https://jobicy.com/?feed=job_feed&job_categories=dev-engineer&remote=1",
-    # Jobicy — data/ML/AI roles
-    "https://jobicy.com/?feed=job_feed&job_categories=data-science&remote=1",
-    # Jobicy — product/management roles
-    "https://jobicy.com/?feed=job_feed&job_categories=product-management&remote=1",
-    # We Work Remotely — tech jobs RSS (US-focused)
+    # Jobicy — engineering roles, US only
+    "https://jobicy.com/?feed=job_feed&job_categories=engineering&geo=usa",
+    # Jobicy — data/ML/AI roles, US only
+    "https://jobicy.com/?feed=job_feed&job_categories=data-science&geo=usa",
+    # Jobicy — technical program/project management roles, US only
+    "https://jobicy.com/?feed=job_feed&job_categories=project-management&geo=usa",
+    # We Work Remotely — tech jobs RSS
     "https://weworkremotely.com/categories/remote-programming-jobs.rss",
     # We Work Remotely — data science
     "https://weworkremotely.com/categories/remote-data-science-jobs.rss",
@@ -154,23 +173,33 @@ class JobRSSSource(Source):
                 if len(parts) == 2:
                     company = parts[1].strip()
 
+            # job_listing_location is Jobicy's custom RSS field; `region` is We Work
+            # Remotely's. Neither is guaranteed present on every feed.
+            location = _strip(
+                entry.get("job_listing_location") or entry.get("region") or ""
+            ).strip() or "Remote"
+
             content_parts = [title]
             if company:
                 content_parts.append(f"Company: {company}")
-            content_parts.append("Location: Remote")
+            content_parts.append(f"Location: {location}")
             if summary:
                 content_parts.append(summary[:1500])
+            content = "\n\n".join(content_parts)
+
+            if not is_in_scope(title, location, content):
+                continue
 
             items.append(
                 CollectedItem(
                     external_id=entry_id,
-                    content="\n\n".join(content_parts),
+                    content=content,
                     doc_type="job",
                     observed_at=observed_at,
                     metadata={
                         "title": title,
                         "company": company or None,
-                        "location": "Remote",
+                        "location": location,
                         "remote_type": "remote",
                         "url": link,
                         "salary_min": None,
@@ -209,24 +238,30 @@ class JobRSSSource(Source):
             description = _strip(job.get("description") or "")
             tags = job.get("tags") or job.get("keywords") or []
             url = job.get("url") or job.get("apply_url") or ""
+            location = _strip(job.get("location") or job.get("candidate_required_location") or "").strip() or "Remote"
+            remote = job.get("remote")
 
             content_parts = [f"{title} at {company}" if company else title]
-            content_parts.append("Location: Remote")
+            content_parts.append(f"Location: {location}")
             if description:
                 content_parts.append(description[:1500])
             if tags:
                 content_parts.append(f"Skills: {', '.join(str(t) for t in tags[:10])}")
+            content = "\n\n".join(content_parts)
+
+            if not is_in_scope(title, location, content):
+                continue
 
             items.append(CollectedItem(
                 external_id=entry_id,
-                content="\n\n".join(content_parts),
+                content=content,
                 doc_type="job",
                 observed_at=datetime.now(UTC),
                 metadata={
                     "title": title,
                     "company": company or None,
-                    "location": "Remote",
-                    "remote_type": "remote",
+                    "location": location,
+                    "remote_type": "remote" if remote else "unknown",
                     "url": url,
                     "salary_min": None,
                     "salary_max": None,

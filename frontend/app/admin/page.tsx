@@ -8,6 +8,25 @@ export default function AdminPage() {
   const [resetStatus, setResetStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [resetLog, setResetLog] = useState<string>("");
   const [resetConfirmText, setResetConfirmText] = useState<string>("");
+  const [scopeStatus, setScopeStatus] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [scopeLog, setScopeLog] = useState<string>("");
+
+  async function purgeOffScopeJobs() {
+    setScopeStatus("running");
+    setScopeLog("Checking job_rss postings against the US/English/tech-role filter...");
+    try {
+      const res = await fetch("/api/purge-off-scope-jobs", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+      setScopeStatus("done");
+      setScopeLog(
+        `Checked ${data.checked} job_rss postings, removed ${data.deleted_raw_documents} that were out of scope (non-US, non-English, or not a tracked tech/software/AI role).`
+      );
+    } catch (err: any) {
+      setScopeStatus("error");
+      setScopeLog(`Error: ${err.message}`);
+    }
+  }
 
   async function resetLinkedIn() {
     setResetStatus("running");
@@ -155,6 +174,25 @@ export default function AdminPage() {
           {resetStatus === "running" ? "Resetting..." : resetStatus === "done" ? "✓ Done — run loop now" : "Reset LinkedIn data →"}
         </button>
         {resetLog && <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">{resetLog}</pre>}
+      </div>
+
+      <div className="rounded-card border border-line bg-surface p-6 space-y-4">
+        <div>
+          <p className="font-mono text-xs uppercase text-muted">Purge off-scope job postings</p>
+          <p className="mt-1 text-sm text-muted">
+            Removes already-collected Job RSS postings that aren't US-based, English-language,
+            tracked tech/software/AI roles (e.g. German-market postings collected before this
+            filter existed). In-scope postings are untouched.
+          </p>
+        </div>
+        <button
+          onClick={purgeOffScopeJobs}
+          disabled={scopeStatus === "running"}
+          className={`rounded-card border px-4 py-2 font-mono text-sm transition-colors ${scopeStatus === "running" ? "border-line text-muted cursor-not-allowed" : "border-provisional text-provisional hover:bg-provisionalSoft"}`}
+        >
+          {scopeStatus === "running" ? "Checking..." : scopeStatus === "done" ? "✓ Done" : "Purge off-scope job postings →"}
+        </button>
+        {scopeLog && <pre className="rounded-card border border-line bg-paper p-4 font-mono text-xs text-muted whitespace-pre-wrap">{scopeLog}</pre>}
       </div>
 
       <div className="rounded-card border border-line bg-surface p-6 space-y-2">

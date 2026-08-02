@@ -11,6 +11,7 @@ from app.models.tables import Evidence, Job, NormalizedDocument, RawDocument
 from app.db import get_session, session_scope
 from app.models.tables import AgentRun, EventLog
 from app.orchestrator.orchestrator import run_agent, run_full_loop, run_mvp_loop
+from app.sources.job_rss import is_in_scope
 
 router = APIRouter(prefix="/runs", tags=["orchestration"])
 
@@ -73,6 +74,31 @@ def purge_source(source_id: str, session: Session = Depends(get_session)) -> dic
     deleted = result.rowcount
     session.commit()
     return {"status": "ok", "source": source_id, "deleted_raw_documents": deleted}
+
+
+@router.delete("/source/job_rss/off-scope")
+def purge_off_scope_job_postings(session: Session = Depends(get_session)) -> dict:
+    """Remove already-collected job_rss postings that fail the US/English/tech-role
+    scoping rule in app.sources.job_rss.is_in_scope — e.g. German-market postings
+    collected before that filter existed. In-scope job_rss postings are untouched."""
+    rows = list(session.scalars(select(RawDocument).where(RawDocument.source == "job_rss")))
+    off_scope_ids = [
+        row.id
+        for row in rows
+        if not is_in_scope(
+            row.doc_metadata.get("title", ""),
+            row.doc_metadata.get("location", ""),
+            row.content,
+        )
+    ]
+    if off_scope_ids:
+        session.execute(sql_delete(RawDocument).where(RawDocument.id.in_(off_scope_ids)))
+        session.commit()
+    return {
+        "status": "ok",
+        "checked": len(rows),
+        "deleted_raw_documents": len(off_scope_ids),
+    }
 
 
 @router.get("")

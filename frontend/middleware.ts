@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from "@/lib/adminAuth";
 
-const GATED_API_ROUTES = new Set(["/api/run", "/api/purge-source"]);
+const GATED_API_ROUTES = new Set(["/api/run", "/api/purge-source", "/api/purge-off-scope-jobs"]);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -32,5 +32,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin", "/admin/:path*", "/api/run", "/api/purge-source"],
+  matcher: ["/admin", "/admin/:path*", "/api/run", "/api/purge-source", "/api/purge-off-scope-jobs"],
 };
