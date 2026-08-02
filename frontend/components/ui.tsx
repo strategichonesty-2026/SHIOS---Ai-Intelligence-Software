@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { confidenceLabel, percent, signed } from "@/lib/format";
+import type { Trend } from "@/lib/api";
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return <p className="text-eyebrow font-mono uppercase text-muted">{children}</p>;
@@ -128,6 +129,38 @@ export function Empty({ title, action }: { title: string; action: string }) {
         Go to Admin → Run collection loop
       </a>
     </div>
+  );
+}
+
+/** Rising/Falling signal table, shared by the Overview page and the frozen Archive detail view. */
+export function MoverTable({ movers, empty }: { movers: Trend[]; empty: string }) {
+  if (!movers.length) {
+    return <p className="text-sm text-muted">{empty}</p>;
+  }
+  return (
+    <Table head={["Signal", "Count", "Change", "Evidence"]}>
+      {movers.map((trend) => (
+        <tr key={trend.id} className="border-b border-line/60 last:border-0">
+          <td className="py-2 pr-4">
+            <span className="font-medium">{trend.entity_name}</span>
+            <span className="ml-2 font-mono text-xs text-muted">{trend.entity_type}</span>
+          </td>
+          <td className="py-2 pr-4 font-mono tabular-nums">
+            {trend.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            <span className="ml-1 text-xs text-muted font-sans">mentions</span>
+          </td>
+          <td className="py-2 pr-4">
+            <DirectionTag direction={trend.direction} delta={trend.delta} />
+            <span className="ml-2 font-mono text-xs text-muted tabular-nums">
+              {signed(trend.delta_pct)}%
+            </span>
+          </td>
+          <td className="py-2">
+            <EvidenceLedger count={trend.evidence_count} max={12} href={`/trends/${trend.id}`} />
+          </td>
+        </tr>
+      ))}
+    </Table>
   );
 }
 

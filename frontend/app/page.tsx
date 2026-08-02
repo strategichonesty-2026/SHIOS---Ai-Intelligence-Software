@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { api, type Trend } from "@/lib/api";
+import { api } from "@/lib/api";
 import { reliabilityBand } from "@/lib/intelligence";
 import { ReliabilityBadge } from "@/components/trust";
-import { percent, signed, weekToDateRange } from "@/lib/format";
-import { Card, DirectionTag, Empty, EvidenceLedger, Eyebrow, Stat, Table } from "@/components/ui";
+import { percent, weekToDateRange } from "@/lib/format";
+import { Card, Empty, Eyebrow, MoverTable, Stat } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -99,36 +99,5 @@ export default async function OverviewPage() {
         </ul>
       </Card>
     </div>
-  );
-}
-
-function MoverTable({ movers, empty }: { movers: Trend[]; empty: string }) {
-  if (!movers.length) {
-    return <p className="text-sm text-muted">{empty}</p>;
-  }
-  return (
-    <Table head={["Signal", "Count", "Change", "Evidence"]}>
-      {movers.map((trend) => (
-        <tr key={trend.id} className="border-b border-line/60 last:border-0">
-          <td className="py-2 pr-4">
-            <span className="font-medium">{trend.entity_name}</span>
-            <span className="ml-2 font-mono text-xs text-muted">{trend.entity_type}</span>
-          </td>
-          <td className="py-2 pr-4 font-mono tabular-nums">
-            {trend.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-            <span className="ml-1 text-xs text-muted font-sans">mentions</span>
-          </td>
-          <td className="py-2 pr-4">
-            <DirectionTag direction={trend.direction} delta={trend.delta} />
-            <span className="ml-2 font-mono text-xs text-muted tabular-nums">
-              {signed(trend.delta_pct)}%
-            </span>
-          </td>
-          <td className="py-2">
-            <EvidenceLedger count={trend.evidence_count} max={12} href={`/trends/${trend.id}`} />
-          </td>
-        </tr>
-      ))}
-    </Table>
   );
 }

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -63,6 +63,83 @@ def overview(session: Session = Depends(get_session)) -> dict:
         },
         "risers": [_trend(t) for t in risers],
         "fallers": [_trend(t) for t in fallers],
+    }
+
+
+@router.get("/archive")
+def archive_windows(session: Session = Depends(get_session)) -> dict:
+    """One row per closed observation window — every Trend period except the current (open) one."""
+    latest = session.scalar(select(func.max(Trend.period)))
+    periods = list(
+        session.scalars(select(Trend.period).distinct().order_by(Trend.period.desc()))
+    )
+    closed_periods = [p for p in periods if p != latest]
+    trend_counts = dict(
+        session.execute(select(Trend.period, func.count()).group_by(Trend.period)).all()
+    )
+    scored_counts = dict(
+        session.execute(
+            select(PredictionResult.reality_period, func.count()).group_by(
+                PredictionResult.reality_period
+            )
+        ).all()
+    )
+    return {
+        "items": [
+            {
+                "period": period,
+                "trend_count": trend_counts.get(period, 0),
+                "scored_forecasts": scored_counts.get(period, 0),
+            }
+            for period in closed_periods
+        ]
+    }
+
+
+@router.get("/archive/{period}")
+def archive_window(period: str, session: Session = Depends(get_session)) -> dict:
+    """Frozen Rising/Falling tables plus forecasts scored against this window."""
+    trends = list(session.scalars(select(Trend).where(Trend.period == period)))
+    if not trends:
+        raise HTTPException(status_code=404, detail="No trend data for that observation window.")
+
+    risers = sorted([t for t in trends if t.delta > 0], key=lambda t: t.delta, reverse=True)[:5]
+    fallers = sorted([t for t in trends if t.delta < 0], key=lambda t: t.delta)[:5]
+
+    results = list(
+        session.scalars(
+            select(PredictionResult).where(PredictionResult.reality_period == period)
+        )
+    )
+    predictions = {
+        p.id: p
+        for p in session.scalars(
+            select(Prediction).where(
+                Prediction.id.in_([r.prediction_id for r in results])
+            )
+        )
+    }
+
+    return {
+        "period": period,
+        "risers": [_trend(t) for t in risers],
+        "fallers": [_trend(t) for t in fallers],
+        "scored_forecasts": [
+            {
+                "id": r.prediction_id,
+                "statement": predictions[r.prediction_id].statement
+                if r.prediction_id in predictions
+                else None,
+                "target_period": predictions[r.prediction_id].target_period
+                if r.prediction_id in predictions
+                else None,
+                "predicted_value": r.predicted_value,
+                "actual_value": r.actual_value,
+                "accuracy_score": r.accuracy_score,
+                "direction_correct": r.direction_correct,
+            }
+            for r in results
+        ],
     }
 
 

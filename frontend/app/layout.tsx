@@ -18,6 +18,7 @@ const NAV = [
   { href: "/", label: "Overview" },
   { href: "/trends", label: "Trends" },
   { href: "/forecasts", label: "Forecasts" },
+  { href: "/archive", label: "Archive" },
   { href: "/jobs", label: "Jobs" },
   { href: "/evidence", label: "Evidence" },
   { href: "/recommendations", label: "Recommendations" },

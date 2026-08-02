@@ -104,8 +104,28 @@ export async function safeGet<T>(path: string): Promise<T | null> {
   }
 }
 
+export type ArchiveWindowSummary = { period: string; trend_count: number; scored_forecasts: number };
+
+export type ArchiveWindowDetail = {
+  period: string;
+  risers: Trend[];
+  fallers: Trend[];
+  scored_forecasts: {
+    id: string;
+    statement: string | null;
+    target_period: string | null;
+    predicted_value: number;
+    actual_value: number;
+    accuracy_score: number;
+    direction_correct: boolean;
+  }[];
+};
+
 export const api = {
   overview: () => safeGet<Overview>("/dashboard/overview"),
+  archive: () => safeGet<{ items: ArchiveWindowSummary[] }>("/dashboard/archive"),
+  archiveWindow: (period: string) =>
+    safeGet<ArchiveWindowDetail>(`/dashboard/archive/${encodeURIComponent(period)}`),
   career: () => safeGet<{ period: string | null; top: Trend[]; predictions: Prediction[] }>("/dashboard/career"),
   technology: () =>
     safeGet<{ period: string | null; top: Trend[]; predictions: Prediction[] }>("/dashboard/technology"),

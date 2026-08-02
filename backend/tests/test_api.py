@@ -41,6 +41,26 @@ def test_dashboard_overview(seeded):
 
 
 @pytest.mark.slow
+def test_archive_excludes_the_open_window_and_freezes_closed_ones(seeded):
+    overview = seeded.get("/api/v1/dashboard/overview").json()
+    latest_period = overview["window"]["latest_period"]
+
+    archive = seeded.get("/api/v1/dashboard/archive").json()
+    assert archive["items"], "expected at least one closed observation window"
+    periods = [item["period"] for item in archive["items"]]
+    assert latest_period not in periods
+    assert periods == sorted(periods, reverse=True)
+
+    detail = seeded.get(f"/api/v1/dashboard/archive/{periods[0]}").json()
+    assert detail["period"] == periods[0]
+    assert detail["risers"] or detail["fallers"]
+    for trend in detail["risers"] + detail["fallers"]:
+        assert trend["period"] == periods[0]
+
+    assert seeded.get("/api/v1/dashboard/archive/2099-W01").status_code == 404
+
+
+@pytest.mark.slow
 def test_trend_endpoints(seeded):
     latest = seeded.get("/api/v1/trends/latest?entity_type=skill").json()
     assert latest["items"], "no latest trends returned"
