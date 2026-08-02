@@ -66,6 +66,20 @@ def test_prediction_detail_exposes_its_own_uncertainty(seeded):
 
 
 @pytest.mark.slow
+def test_predictions_are_paginated_by_target_period_desc(seeded):
+    first_page = seeded.get("/api/v1/predictions?limit=2&offset=0").json()
+    assert first_page["total"] >= len(first_page["items"])
+    periods = [p["target_period"] for p in first_page["items"]]
+    assert periods == sorted(periods, reverse=True)
+
+    if first_page["total"] > 2:
+        second_page = seeded.get("/api/v1/predictions?limit=2&offset=2").json()
+        first_ids = {p["id"] for p in first_page["items"]}
+        second_ids = {p["id"] for p in second_page["items"]}
+        assert first_ids.isdisjoint(second_ids)
+
+
+@pytest.mark.slow
 def test_accuracy_endpoint_reports_calibration(seeded):
     payload = seeded.get("/api/v1/predictions/accuracy").json()
     assert payload["scored"] > 0

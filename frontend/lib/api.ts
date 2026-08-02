@@ -112,7 +112,10 @@ export const api = {
   explorer: (entityType: string) => safeGet<Explorer>(`/dashboard/explorer?entity_type=${entityType}&top=6`),
   latestTrends: (entityType: string) =>
     safeGet<{ period: string | null; items: Trend[] }>(`/trends/latest?entity_type=${entityType}&limit=25`),
-  predictions: () => safeGet<{ items: Prediction[] }>("/predictions?limit=25"),
+  predictions: (limit = 25, offset = 0) =>
+    safeGet<{ items: Prediction[]; limit: number; offset: number; total: number }>(
+      `/predictions?limit=${limit}&offset=${offset}`
+    ),
   accuracy: () =>
     safeGet<{
       scored: number;

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.api.deps import Page
@@ -20,13 +20,20 @@ def list_predictions(
     page: Page = Depends(),
     session: Session = Depends(get_session),
 ) -> dict:
-    query = select(Prediction).order_by(Prediction.created_at.desc())
+    query = select(Prediction)
     if status:
         query = query.where(Prediction.status == status)
     if entity_type:
         query = query.where(Prediction.entity_type == entity_type)
+    total = session.scalar(select(func.count()).select_from(query.subquery())) or 0
+    query = query.order_by(Prediction.target_period.desc(), Prediction.created_at.desc())
     rows = list(session.scalars(query.limit(page.limit).offset(page.offset)))
-    return {"items": [_serialize(p) for p in rows], "limit": page.limit, "offset": page.offset}
+    return {
+        "items": [_serialize(p) for p in rows],
+        "limit": page.limit,
+        "offset": page.offset,
+        "total": total,
+    }
 
 
 @router.get("/accuracy")
