@@ -82,19 +82,19 @@ export default async function OverviewPage() {
         </Card>
       </div>
 
-      <Card eyebrow="Standing caveat" title="What this cannot tell you">
+      <Card eyebrow="Standing caveat" title="What this can't tell you (and why that's okay)">
         <ul className="space-y-2 text-sm text-muted">
           <li>
-            It counts job postings, not hires. Posting volume leads actual hiring by weeks and
-            overstates churn.
+            We count job posts, not hires — postings move faster than actual hiring, so treat this
+            as an early signal, not a final number.
           </li>
           <li>
-            It only sees the sources it is configured to read. Everything else is absent, which is
-            not the same as zero.
+            We only see the sources we're connected to — "not in our data" isn't the same as "not
+            happening."
           </li>
           <li>
-            Forecasts are linear extrapolations. By construction they will miss an inflection point,
-            and the accuracy figure above includes those misses.
+            Our forecasts are straight-line projections — they're built to miss sudden turns, and we
+            count those misses against ourselves in the accuracy score above.
           </li>
         </ul>
       </Card>
