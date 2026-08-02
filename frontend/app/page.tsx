@@ -21,6 +21,7 @@ export default async function OverviewPage() {
 
   const { accuracy, counts, window } = overview;
   const band = reliabilityBand(accuracy.mean_calibration_delta);
+  const thisWeekLabel = `This week (${weekToDateRange(window.latest_period ?? "")})`;
   const trackRecord =
     accuracy.scored === 0
       ? "No forecast has reached its expiration date yet. Nothing here is proven."
@@ -73,10 +74,10 @@ export default async function OverviewPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card eyebrow="This week" title="Rising">
+        <Card eyebrow={thisWeekLabel} title="Rising">
           <MoverTable movers={overview.risers} empty="Nothing rose this period." />
         </Card>
-        <Card eyebrow="This week" title="Falling">
+        <Card eyebrow={thisWeekLabel} title="Falling">
           <MoverTable movers={overview.fallers} empty="Nothing fell this period." />
         </Card>
       </div>
